@@ -260,6 +260,40 @@ export const railStanding = {
   ],
 };
 
+/* ── the constellation's names ─────────────────────────────────────────────── */
+
+export const dialNames = {
+  about: 'two names printed on the constellation dial landing on each other',
+  // Every earlier check measured each dial label against the PANEL, and none
+  // measured labels against each other — so 60 overlapping pairs among the 21
+  // printed names went unreported while the top of the music arc was a smear.
+  fn: function () {
+    if (location.pathname !== '/constellation') return [];
+    const svg = [...document.querySelectorAll('svg')].sort((a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width)[0];
+    const layer = svg && svg.parentElement.querySelector('div[aria-hidden="true"]');
+    // Below xl the dial is not drawn; the same data is a list.
+    if (!layer || !layer.getClientRects().length) return [];
+    const names = [...layer.querySelectorAll('span')].filter((x) => x.textContent.trim() && x.getClientRects().length);
+    const out = [];
+    let pairs = 0;
+    for (let i = 0; i < names.length; i++) {
+      const a = names[i].getBoundingClientRect();
+      for (let j = i + 1; j < names.length; j++) {
+        const b = names[j].getBoundingClientRect();
+        if (a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) {
+          pairs++;
+          if (out.length < 5) out.push(`"${names[i].textContent.trim()}" lands on "${names[j].textContent.trim()}"`);
+        }
+      }
+    }
+    if (pairs > out.length) out.push(`… ${pairs} overlapping pairs in all`);
+    return out;
+  },
+  faults: [
+    { route: '/constellation', expect: 'fires', inject: function () { const svg = [...document.querySelectorAll('svg')].sort((a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width)[0]; const names = [...svg.parentElement.querySelector('div[aria-hidden="true"]').querySelectorAll('span')].filter((x) => x.textContent.trim()); names[1].style.left = names[0].style.left; names[1].style.top = names[0].style.top; names[1].style.transform = names[0].style.transform; } },
+  ],
+};
+
 /* ── the story's claims ─────────────────────────────────────────────────────── */
 
 export const storyClaims = {
@@ -393,5 +427,5 @@ export const contrast = {
 };
 
 /** The detectors every layout render runs. */
-export const PAGE_DETECTORS = { sentinel, pronoun, punctuation, floor, overflow, clipped, masthead, anchors, railStanding, storyClaims };
+export const PAGE_DETECTORS = { sentinel, pronoun, punctuation, floor, overflow, clipped, masthead, anchors, railStanding, dialNames, storyClaims };
 export const ALL_DETECTORS = { ...PAGE_DETECTORS, contrast };

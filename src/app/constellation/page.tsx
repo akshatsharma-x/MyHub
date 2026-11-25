@@ -184,6 +184,97 @@ function layout(nodes: EntityNode[]): { placed: Placed[]; sectors: Sector[] } {
   return { placed, sectors };
 }
 
+/* ── Which names are printed on the dial ──────────────────────────────────────
+   The substantial nodes carry their name in place, and the heaviest names all
+   sit nearest the hub — so in the music sector they landed on one another. At
+   1280px, 60 pairs among the 21 printed names overlapped, and the top of the
+   music arc was one illegible smear. So names are taken heaviest first, and a
+   name that would land on one already placed is left off the picture. It is one
+   focus away, and always in the readout and the index beside the dial.
+
+   The test runs at the narrowest the dial is ever drawn: xl, with the rail
+   expanded, 592px across. Names are CSS pixels on a dial that scales, so two
+   that clear each other at 592px clear each other at every larger size. */
+const NARROWEST_DIAL_PX = 592;
+const PX_PER_UNIT = NARROWEST_DIAL_PX / BOX_W;
+/** Azeret Mono at 12px bold, measured off the rendered names: 7.8px a character
+ *  (it is monospaced), 12px tall at leading-none. */
+const NAME_CHAR_PX = 7.8;
+const NAME_H_PX = 12;
+/** The sector names are .k-label: 11px tracked caps, measured at 8.69px a
+ *  character including the tracking, 14.3px tall. */
+const SECTOR_CHAR_PX = 8.69;
+const SECTOR_H_PX = 14.3;
+/** Clear space kept round every printed name. */
+const NAME_GAP_PX = 3;
+
+interface Box {
+  l: number;
+  t: number;
+  r: number;
+  b: number;
+}
+
+/** The box a label of the given pixel size occupies, in viewBox units, anchored
+ *  at (x, y) exactly as radialShift(cos, sin) places it. */
+function boxAt(x: number, y: number, cos: number, sin: number, wPx: number, hPx: number): Box {
+  const w = wPx / PX_PER_UNIT;
+  const h = hPx / PX_PER_UNIT;
+  const g = NAME_GAP_PX / PX_PER_UNIT;
+  const side = cos > 0.3 || cos < -0.3;
+  const l = cos > 0.3 ? x : cos < -0.3 ? x - w : x - w / 2;
+  const t = side ? y - h / 2 : sin < 0 ? y - h : y;
+  return { l: l - g, t: t - g, r: l + w + g, b: t + h + g };
+}
+
+function overlaps(a: Box, b: Box): boolean {
+  return a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t;
+}
+
+function sectorBox(s: Sector): Box {
+  const text = `${kindDef(s.kind).plural} ${s.count}`;
+  return boxAt(s.labelX, s.labelY, s.cos, s.sin, text.length * SECTOR_CHAR_PX, SECTOR_H_PX);
+}
+
+/** Where a node's name is printed. Outward from the hub, so names fan apart by
+ *  angle — except where that would land it on its sector's name, which happens
+ *  out at the rim. The sector names never move or dim (they are the map's
+ *  coordinates), so the node's name goes on the inward side instead. */
+interface NamePlace {
+  x: number;
+  y: number;
+  cos: number;
+  sin: number;
+  box: Box;
+}
+
+function namePlace(n: Placed, sectorBoxes: Box[]): NamePlace {
+  const wPx = clip(n.label, 16).length * NAME_CHAR_PX;
+  const out = boxAt(n.labelX, n.labelY, n.cos, n.sin, wPx, NAME_H_PX);
+  if (!sectorBoxes.some((b) => overlaps(out, b))) return { x: n.labelX, y: n.labelY, cos: n.cos, sin: n.sin, box: out };
+  const x = n.x - n.cos * (n.r + 10);
+  const y = n.y - n.sin * (n.r + 10);
+  return { x, y, cos: -n.cos, sin: -n.sin, box: boxAt(x, y, -n.cos, -n.sin, wPx, NAME_H_PX) };
+}
+
+/** The names printed without a focus: substantial nodes, heaviest first, each
+ *  only if it has room — clear of the sector names and of every name already
+ *  placed. Deterministic, like the layout it reads. */
+function namedInPlace(placed: Placed[], places: Map<string, NamePlace>, sectorBoxes: Box[]): Set<string> {
+  const taken: Box[] = [...sectorBoxes];
+  const named = new Set<string>();
+  const candidates = placed
+    .filter((n) => n.r > 20)
+    .sort((a, b) => b.count - a.count || (a.name < b.name ? -1 : 1));
+  for (const n of candidates) {
+    const box = places.get(n.name)?.box;
+    if (!box || taken.some((t) => overlaps(box, t))) continue;
+    taken.push(box);
+    named.add(n.name);
+  }
+  return named;
+}
+
 function EntityPanel({
   node,
   onClose,
@@ -320,6 +411,9 @@ export default function ConstellationPage(): React.JSX.Element {
   const { placed: nodes, sectors } = useMemo(() => layout(ENTITY_GRAPH.nodes), []);
 
   const positions = useMemo(() => new Map(nodes.map((n) => [n.name, n])), [nodes]);
+  const sectorBoxes = useMemo(() => sectors.map(sectorBox), [sectors]);
+  const places = useMemo(() => new Map(nodes.map((n) => [n.name, namePlace(n, sectorBoxes)])), [nodes, sectorBoxes]);
+  const inPlace = useMemo(() => namedInPlace(nodes, places, sectorBoxes), [nodes, places, sectorBoxes]);
   const kindOf = useMemo(
     () => new Map(ENTITY_GRAPH.nodes.map((n) => [n.name, n.kind])),
     [],
@@ -346,6 +440,15 @@ export default function ConstellationPage(): React.JSX.Element {
   }, [kindFilter, kindOf]);
 
   const focus = pinned ?? hovered;
+  // A focused name is always printed, so any printed name it would land on
+  // steps aside while it is.
+  const focusBox = focus ? (places.get(focus)?.box ?? null) : null;
+  /** A printed name that the focused name would land on, which yields while the
+   *  focus holds. */
+  const yields = (name: string): boolean => {
+    const box = places.get(name)?.box;
+    return Boolean(focusBox && box && overlaps(box, focusBox));
+  };
 
   // Everything within one hop of the focused entity. `null` means nothing is
   // focused, which is how the dim is switched off.
@@ -569,31 +672,40 @@ export default function ConstellationPage(): React.JSX.Element {
                   </span>
                 ))}
 
-                {/* Only the substantial nodes are named in place, and the name is
-                    thrown outward from the hub so the labels fan apart by angle.
-                    131 names at once is not a picture, and the rest are one hover
-                    away in the readout and always present in the index beside. */}
+                {/* Only the substantial nodes are named in place, only where the
+                    name has room (namedInPlace), and the name is thrown outward
+                    from the hub so the labels fan apart by angle. 131 names at
+                    once is not a picture, and the rest are one hover away in the
+                    readout and always present in the index beside. */}
                 {nodes
-                  .filter((n) => (n.r > 20 || focus === n.name) && isOn(n.name))
-                  .map((n) => (
-                    <span
-                      key={n.name}
-                      className="absolute whitespace-nowrap text-[12px] leading-none"
-                      style={{
-                        ...pos(n.labelX, n.labelY),
-                        transform: radialShift(n.cos, n.sin),
-                        fontFamily: 'var(--font-display)',
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      {/* 16, not the 22 the readout allows: a focused node can
-                          be out at the rim, where a longer name would run past
-                          the panel edge. The full name is in the readout below
-                          and in the index beside, both at reading size. */}
-                      {clip(n.label, 16)}
-                    </span>
-                  ))}
+                  .filter(
+                    (n) =>
+                      (focus === n.name ||
+                        (inPlace.has(n.name) && !yields(n.name))) &&
+                      isOn(n.name),
+                  )
+                  .map((n) => {
+                    const at = places.get(n.name) ?? { x: n.labelX, y: n.labelY, cos: n.cos, sin: n.sin };
+                    return (
+                      <span
+                        key={n.name}
+                        className="absolute whitespace-nowrap text-[12px] leading-none"
+                        style={{
+                          ...pos(at.x, at.y),
+                          transform: radialShift(at.cos, at.sin),
+                          fontFamily: 'var(--font-display)',
+                          fontWeight: 700,
+                          color: 'var(--text-primary)',
+                        }}
+                      >
+                        {/* 16, not the 22 the readout allows: a focused node can
+                            be out at the rim, where a longer name would run past
+                            the panel edge. The full name is in the readout below
+                            and in the index beside, both at reading size. */}
+                        {clip(n.label, 16)}
+                      </span>
+                    );
+                  })}
               </div>
             </div>
 

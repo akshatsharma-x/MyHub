@@ -34,10 +34,21 @@ const WALK = async function () {
   for (const g of nodes) {
     g.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await wait(60);
-    for (const s of shown()) {
+    const now = shown();
+    for (const s of now) {
       if (before.has(s.textContent.trim())) continue;
       res.revealed++;
       judge(s, 'revealed label');
+      // A focused name must not land on another printed name: the dial steps
+      // a colliding name aside while the focus holds.
+      const a = s.getBoundingClientRect();
+      for (const o of now) {
+        if (o === s) continue;
+        const b = o.getBoundingClientRect();
+        if (a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) {
+          res.problems.push(`focused "${s.textContent.trim()}" lands on "${o.textContent.trim()}"`);
+        }
+      }
     }
     if (document.documentElement.scrollWidth > innerWidth + 1) res.problems.push(`focusing a node made the document ${document.documentElement.scrollWidth - innerWidth}px too wide`);
     g.dispatchEvent(new MouseEvent('click', { bubbles: true }));

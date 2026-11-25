@@ -48,14 +48,16 @@ here are invisible in the source:
   element's screen CTM, and the dial now carries no `<text>` at all: every name on
   it is HTML in an overlay, set in CSS pixels.
 - **Every label the dial can print** is compared with the panel that has to
-  contain it, at 1280, 1440 and 1920: the 29 printed without a focus (21 node
-  names and the 8 sector labels) and the 110 that only a focus reveals, with each
-  of the 131 nodes clicked in turn. Nothing crosses the edge. The binding case is
+  contain it and with every other label, at 1280, 1440 and 1920: the 14 printed
+  without a focus (6 node names and the 8 sector labels) and the 125 that only a
+  focus reveals, with each of the 131 nodes clicked in turn. Nothing crosses the
+  edge and no name lands on another. The binding case is
   not a node name but a rim kind label — the purchases sector's, with 12px of
   clearance inside the geometry box and 16px of panel padding beyond that before
   it would touch ink. *This line used to say the labels were checked "by focusing
   all 131 nodes". The harness behind it measured only the names a focus revealed,
-  so the 29 always on screen were never part of that check.*
+  so the 29 then on screen were never part of that check — and nothing measured
+  labels against each other, which is how 60 overlapping pairs went unseen.*
 - **The two blocks that print the owner** — the masthead's standing line on `/`
   and the anchors list on `/sources` — are the only places a change to
   `meta.owner` can reach the layout, and both have their own detectors in every
@@ -250,10 +252,22 @@ meaningless hairball. So: **the nodes are entities, not receipts.**
   A kind filter re-colours and re-weights the graph rather than reloading it.
 - A legend, always visible, that explains what size and colour mean. A graph
   without a legend is decoration.
-- **Mobile:** an SVG graph is not usable at 360px. Below `lg`, render the same
+- **Names on the dial:** only substantial nodes are named in place, heaviest
+  first, and only where the name has room — no printed name may land on another
+  name or on a sector label. The rest are one focus away, and always in the
+  readout and the ranked index beside the dial. A focused name is always printed;
+  a printed name it would land on steps aside while the focus holds, and a rim
+  name that would land on its sector label is printed on the inward side, because
+  the sector labels are the map's coordinates and never move or dim. *Until this
+  rule existed every substantial node printed its name, and at 1280px 60 pairs of
+  the 21 printed names overlapped — the music arc was one illegible smear, and no
+  check measured labels against each other, only against the panel.*
+- **Mobile:** an SVG graph is not usable at 360px. Below `xl`, render the same
   data as a ranked, grouped entity list with the same click-through and the same
   co-occurrence panel. Same information, appropriate form — not a pinch-zoom
-  canvas and not a "view on desktop" apology.
+  canvas and not a "view on desktop" apology. (This said `lg`. The page switches
+  at `xl` for the reason its code gives: at `lg` the dial's column is 344px, and
+  names set in CSS pixels would take more room than the dial they annotate.)
 
 ---
 

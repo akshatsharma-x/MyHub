@@ -26,3 +26,8 @@ export function routeMetadata(path: string): Metadata {
   const page = PAGE_TITLES[path];
   return page ? { title: page.title } : {};
 }
+
+/** The roll's search field. ⌘K and the topbar's search button focus it directly
+ *  when the roll is already open: pushing `/roll?focus=1` onto a mounted roll
+ *  changes the URL and nothing else, because the roll reads `focus` on mount. */
+export const ROLL_SEARCH_ID = 'roll-search';

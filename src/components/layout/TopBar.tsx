@@ -1,12 +1,12 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ARCHIVE } from '@/lib/archive';
 import { num } from '@/lib/format';
-import { PAGE_TITLES } from '@/lib/routes';
+import { PAGE_TITLES, ROLL_SEARCH_ID } from '@/lib/routes';
 import { MobileMenuButton } from './Sidebar';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -30,16 +30,25 @@ export function TopBar() {
 
   // Cmd/Ctrl+K anywhere lands on the roll, which is where searching happens.
   // One shortcut, one destination — no command palette pretending to be one.
+  // Already on the roll, it focuses the field itself: the roll reads `?focus=1`
+  // only when it mounts, so pushing it onto an open roll used to change the URL
+  // and leave the cursor where it was.
+  const openSearch = useCallback(() => {
+    const field = pathname === '/roll' ? document.getElementById(ROLL_SEARCH_ID) : null;
+    if (field) field.focus();
+    else router.push('/roll?focus=1');
+  }, [pathname, router]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        router.push('/roll?focus=1');
+        openSearch();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [router]);
+  }, [openSearch]);
 
   const page = PAGE_TITLES[pathname] ?? { title: 'MyHUB', subtitle: 'Your life, in receipts' };
 
@@ -87,7 +96,7 @@ export function TopBar() {
         <div className="flex items-center gap-2 flex-shrink-0">
           <motion.button
             type="button"
-            onClick={() => router.push('/roll?focus=1')}
+            onClick={openSearch}
             className="hidden sm:flex items-center gap-2 px-3 py-1.5"
             style={{
               background: 'var(--frame-well)',

@@ -18,6 +18,7 @@ import { useExploration } from '@/lib/ExplorationContext';
 import { useOverlay } from '@/lib/OverlayContext';
 import { num, plural } from '@/lib/format';
 import { KIND_DEFS, kindDef } from '@/lib/kinds';
+import { ROLL_SEARCH_ID } from '@/lib/routes';
 import type { Provenance, ReceiptKind, SourceId } from '@/lib/types';
 import { KindIcon } from '@/components/receipt/KindIcon';
 import { ReceiptCard } from '@/components/receipt/ReceiptCard';
@@ -259,6 +260,7 @@ function RollBody(): React.JSX.Element {
             />
             <input
               ref={fieldRef}
+              id={ROLL_SEARCH_ID}
               type="search"
               value={query.q}
               onChange={(e) => set({ q: e.target.value })}

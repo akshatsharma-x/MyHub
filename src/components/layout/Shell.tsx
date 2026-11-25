@@ -20,6 +20,11 @@ function ShellContent({ children }: { children: React.ReactNode }) {
       data-drawer={mobileOpen ? 'open' : 'closed'}
       style={{ background: 'var(--bg-base)' }}
     >
+      {/* Before the rail in source order, so it is the first Tab stop. */}
+      <a href="#main" className="nx-skip k-btn k-btn-amber">
+        Skip to content
+      </a>
+
       {/* Environmental lighting. Sits at z-index 0, so the main column below is
           lifted to 1 — otherwise the vignette would paint over the content it
           is meant to sit behind. The rail (z-40) and topbar (z-30) are already
@@ -28,7 +33,7 @@ function ShellContent({ children }: { children: React.ReactNode }) {
 
       <Sidebar />
       <TopBar />
-      <main className="nx-shell-main relative min-h-screen pt-14" style={{ zIndex: 1 }}>
+      <main id="main" tabIndex={-1} className="nx-shell-main relative min-h-screen pt-14" style={{ zIndex: 1 }}>
         {/* The canvas is centred rather than left-aligned, so past the point
             where the measure stops growing the leftover width becomes symmetric
             margin instead of one dead gutter on the right. Keyed by route so

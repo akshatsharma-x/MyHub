@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
@@ -14,6 +15,10 @@ import { num } from '@/lib/format';
 import { useSidebar } from './SidebarContext';
 import { Tooltip } from '@/components/ui/Tooltip';
 
+/** Ties the hamburger to the rail it opens (aria-controls), and lets the drawer
+ *  hand focus back to the hamburger when it closes. */
+const RAIL_ID = 'nx-rail';
+const TOGGLE_ID = 'nx-rail-toggle';
 const NAV_ITEMS = [
   { href: '/', label: 'The Archive', icon: Archive },
   { href: '/roll', label: 'The Roll', icon: ScrollText },
@@ -147,6 +152,48 @@ export function Sidebar() {
   // score — hence a share of the whole, not a level.
   const exploredPercent = total > 0 ? Math.min(100, (seenCount / total) * 100) : 0;
 
+  // The open drawer is modal — a scrim covers the page behind it — so it behaves
+  // like one from the keyboard: focus moves into it on open, Tab cycles inside
+  // it, Escape closes it, and closing hands focus back to the hamburger. Before
+  // this, opening it left focus on the hamburger behind the scrim, and Escape
+  // did nothing.
+  const railRef = useRef<HTMLElement>(null);
+  const drawerOpen = isMobile && mobileOpen;
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const rail = railRef.current;
+    rail?.querySelector<HTMLElement>('[aria-label="Close navigation"]')?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeMobile();
+        return;
+      }
+      if (e.key !== 'Tab' || !rail) return;
+      const stops = [...rail.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')];
+      const first = stops[0];
+      const last = stops[stops.length - 1];
+      if (!first || !last) return;
+      if (e.shiftKey && (document.activeElement === first || !rail.contains(document.activeElement))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (document.activeElement === last || !rail.contains(document.activeElement))) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      // Closing hides the rail, which would drop focus to <body>; return it to
+      // the control that opened the drawer instead. Only if focus was in the
+      // rail, so a close caused by something else does not steal it.
+      if (rail?.contains(document.activeElement) || document.activeElement === document.body) {
+        document.getElementById(TOGGLE_ID)?.focus();
+      }
+    };
+  }, [drawerOpen, closeMobile]);
+
   return (
     <>
       {/* Mobile backdrop. The same literal as the receipt overlay's scrim, and
@@ -171,6 +218,8 @@ export function Sidebar() {
       {/* Width, and the drawer's slide on a phone, come from .nx-shell-rail —
           so both are right in the static HTML, before any of this runs. */}
       <aside
+        ref={railRef}
+        id={RAIL_ID}
         className="nx-shell-rail fixed left-0 top-0 h-screen flex flex-col z-40 overflow-hidden"
         style={{
           // Deeper than the canvas, so the separation comes from the rail
@@ -440,10 +489,13 @@ export function Sidebar() {
 
 /** Exported for the TopBar's hamburger. */
 export function MobileMenuButton() {
-  const { openMobile } = useSidebar();
+  const { openMobile, mobileOpen } = useSidebar();
   return (
     <button
+      id={TOGGLE_ID}
       onClick={openMobile}
+      aria-expanded={mobileOpen}
+      aria-controls={RAIL_ID}
       className="w-8 h-8 flex items-center justify-center"
       style={{
         background: 'var(--frame-well)',

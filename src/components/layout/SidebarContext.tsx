@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useState, useSyncExternalStore } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore } from 'react';
 
 interface SidebarContextType {
   collapsed: boolean;
@@ -58,18 +58,17 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     () => false,
   );
 
-  return (
-    <SidebarContext.Provider
-      value={{
-        collapsed,
-        mobileOpen,
-        isMobile,
-        toggle: () => setCollapsed(c => !c),
-        openMobile: () => setMobileOpen(true),
-        closeMobile: () => setMobileOpen(false),
-      }}
-    >
-      {children}
-    </SidebarContext.Provider>
+  // Stable identities, because the drawer's focus handling is an effect keyed on
+  // closeMobile: as inline arrows these were new on every render, and the effect
+  // would have re-run — and pulled focus back to the close button — every time
+  // anything in the rail re-rendered.
+  const toggle = useCallback(() => setCollapsed((c) => !c), []);
+  const openMobile = useCallback(() => setMobileOpen(true), []);
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
+  const value = useMemo(
+    () => ({ collapsed, mobileOpen, isMobile, toggle, openMobile, closeMobile }),
+    [collapsed, mobileOpen, isMobile, toggle, openMobile, closeMobile],
   );
+
+  return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;
 }

@@ -1130,3 +1130,25 @@ html[data-theme="light"] .nx-theme-icon {
 .nx-page-enter {
   animation: nx-page-enter 0.3s ease-out;
 }
+
+/* Skip link — the first stop on every page. Without it a keyboard reader pressed
+   Tab eleven times (the rail's collapse control, its eight links, search and the
+   theme toggle) before reaching anything on the page itself. It waits above the
+   viewport and drops into the corner on focus, dressed as .k-btn-amber like the
+   other primary controls; this rule only places it, and sits outside the
+   components layer so the placement always wins. */
+.nx-skip {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 70;
+  transform: translateY(calc(-100% - 1.5rem));
+}
+.nx-skip:focus {
+  transform: none;
+}
+/* The skip target takes focus so a screen reader announces where it landed, but
+   it is the whole canvas, and ringing it would outline the page. */
+.nx-shell-main:focus {
+  outline: none;
+}

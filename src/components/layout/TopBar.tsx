@@ -1,17 +1,21 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { Search } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ARCHIVE } from '@/lib/archive';
 import { num } from '@/lib/format';
-import { useSidebar } from './SidebarContext';
 import { MobileMenuButton } from './Sidebar';
 import { ThemeToggle } from './ThemeToggle';
 
-const SIDEBAR_EXPANDED = 220;
-const SIDEBAR_COLLAPSED = 60;
+/** The platform never changes while the page is open, so there is nothing to
+ *  subscribe to; useSyncExternalStore is here for its server snapshot, which
+ *  is what lets the label differ between server and client without a
+ *  hydration mismatch. */
+const noSubscription = () => () => {};
+const clientHotkey = () => (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘K' : 'Ctrl K');
+const serverHotkey = () => '⌘K';
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'The Archive', subtitle: 'Ten years, three datasets' },
@@ -27,16 +31,11 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
 export function TopBar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { collapsed, isMobile } = useSidebar();
-  const prefersReducedMotion = useReducedMotion();
-  const [hotkey, setHotkey] = useState('⌘K');
 
   // The label has to name the key this machine actually uses, and that is only
-  // knowable on the client — so it starts as the Mac form (which is what the
-  // server renders) and corrects itself after mount on everything else.
-  useEffect(() => {
-    if (!/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) setHotkey('Ctrl K');
-  }, []);
+  // knowable on the client — so the server renders the Mac form and every other
+  // platform corrects it straight after hydration.
+  const hotkey = useSyncExternalStore(noSubscription, clientHotkey, serverHotkey);
 
   // Cmd/Ctrl+K anywhere lands on the roll, which is where searching happens.
   // One shortcut, one destination — no command palette pretending to be one.
@@ -52,14 +51,11 @@ export function TopBar() {
   }, [router]);
 
   const page = PAGE_TITLES[pathname] ?? { title: 'MyHUB', subtitle: 'Your life, in receipts' };
-  const sidebarWidth = isMobile ? 0 : collapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED;
-  const transitionDuration = prefersReducedMotion ? 0 : 0.25;
 
   return (
-    <motion.header
-      className="fixed top-0 right-0 h-14 z-30"
-      animate={{ left: sidebarWidth }}
-      transition={{ duration: transitionDuration, ease: [0.4, 0, 0.2, 1] }}
+    // `left` comes from .nx-shell-bar, so it is right in the static HTML.
+    <header
+      className="nx-shell-bar fixed top-0 right-0 h-14 z-30"
       style={{
         // A cut block of the same stock as the rail rather than a pane of glass
         // over the page: opaque, and closed by a hard 2px rule instead of a
@@ -73,11 +69,12 @@ export function TopBar() {
           and padding below it — so the page title sits over the page's own left
           margin and the actions over its right. */}
       <div className="mx-auto w-full max-w-7xl h-full flex items-center gap-3 px-5 lg:px-8">
-        {isMobile && (
-          <div className="flex-shrink-0">
-            <MobileMenuButton />
-          </div>
-        )}
+        {/* Always rendered and hidden by CSS at lg, rather than mounted once JS
+            has decided the viewport is narrow: mounting it late pushed the title
+            sideways after first paint. */}
+        <div className="flex-shrink-0 lg:hidden">
+          <MobileMenuButton />
+        </div>
 
         <div className="flex-1 min-w-0">
           <h1
@@ -155,6 +152,6 @@ export function TopBar() {
           <ThemeToggle />
         </div>
       </div>
-    </motion.header>
+    </header>
   );
 }

@@ -14,9 +14,6 @@ import { num } from '@/lib/format';
 import { useSidebar } from './SidebarContext';
 import { Tooltip } from '@/components/ui/Tooltip';
 
-const SIDEBAR_EXPANDED = 220;
-const SIDEBAR_COLLAPSED = 60;
-
 const NAV_ITEMS = [
   { href: '/', label: 'The Archive', icon: Archive },
   { href: '/roll', label: 'The Roll', icon: ScrollText },
@@ -135,8 +132,11 @@ export function Sidebar() {
   const { seenCount } = useExploration();
   const prefersReducedMotion = useReducedMotion();
 
-  const isExpanded = isMobile ? mobileOpen : !collapsed;
-  const width = isExpanded ? SIDEBAR_EXPANDED : SIDEBAR_COLLAPSED;
+  // A phone's drawer is always the full rail; whether it is on screen is CSS
+  // (`data-drawer`). It used to collapse its contents while closed and expand
+  // them as it opened, which made hydration on a phone re-render the whole rail
+  // and reflowed every label while the drawer was still sliding in.
+  const isExpanded = isMobile || !collapsed;
 
   const owner = ARCHIVE.meta.owner;
   const ownerInitial = (owner.name.trim().charAt(0) || 'A').toUpperCase();
@@ -146,7 +146,6 @@ export function Sidebar() {
   // place this is reported, and it is the reason to keep exploring rather than a
   // score — hence a share of the whole, not a level.
   const exploredPercent = total > 0 ? Math.min(100, (seenCount / total) * 100) : 0;
-  const transitionDuration = prefersReducedMotion ? 0 : 0.25;
 
   return (
     <>
@@ -169,13 +168,10 @@ export function Sidebar() {
         )}
       </AnimatePresence>
 
-      <motion.aside
-        className="fixed left-0 top-0 h-screen flex flex-col z-40 overflow-hidden"
-        animate={{
-          width,
-          x: isMobile && !mobileOpen ? -SIDEBAR_EXPANDED : 0,
-        }}
-        transition={{ duration: transitionDuration, ease: [0.4, 0, 0.2, 1] }}
+      {/* Width, and the drawer's slide on a phone, come from .nx-shell-rail —
+          so both are right in the static HTML, before any of this runs. */}
+      <aside
+        className="nx-shell-rail fixed left-0 top-0 h-screen flex flex-col z-40 overflow-hidden"
         style={{
           // Deeper than the canvas, so the separation comes from the rail
           // receding rather than from a lighter panel sitting on top. The edge
@@ -437,7 +433,7 @@ export function Sidebar() {
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.aside>
+      </aside>
     </>
   );
 }

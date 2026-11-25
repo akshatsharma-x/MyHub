@@ -1045,3 +1045,88 @@ html[data-theme="light"] .nx-theme-icon {
   background: var(--paper-well);
   border: 1px solid rgba(20, 20, 16, 0.14);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SHELL GEOMETRY
+
+   The rail, the topbar and the main column are positioned here rather than by
+   the components that render them, because CSS knows the viewport at first
+   paint and React does not.
+
+   They used to be Motion `animate` targets computed from an `isMobile` flag.
+   That flag is false on the server and during hydration — matchMedia does not
+   exist there — and Motion renders no inline style for an `animate` target with
+   no `initial`. So the static HTML carried none of this geometry, and every load
+   painted a layout that was then animated into the real one:
+
+     · 1280px — the main column started at margin-left 0, under the rail, and
+       slid to 220px on every page load. Cumulative layout shift 0.37.
+     · 360px  — the desktop rail covered 64% of a phone, the topbar title was
+       clipped behind it, and the topbar then slid left once JS ran. CLS 0.60.
+
+   Anything above 0.25 is "poor" on Core Web Vitals. With the geometry here, the
+   first paint is the final layout at every width, before any JS has run. The
+   components now only set two attributes on .nx-shell — `data-rail` for the
+   desktop collapse and `data-drawer` for the phone drawer — and the numbers are
+   the shell's: 220 / 60, 0.25s on the shell's own curve. CSS transitions never
+   run on a first style resolution, so these animate when a reader toggles
+   something and never on load. The reduced-motion block above covers them.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.nx-shell {
+  --rail-w: 220px;
+  --rail-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nx-shell[data-rail="collapsed"] {
+  --rail-w: 60px;
+}
+
+.nx-shell-rail {
+  width: var(--rail-w);
+  transition: width 0.25s var(--rail-ease);
+}
+.nx-shell-bar {
+  left: var(--rail-w);
+  transition: left 0.25s var(--rail-ease);
+}
+.nx-shell-main {
+  margin-left: var(--rail-w);
+  transition: margin-left 0.25s var(--rail-ease);
+}
+
+/* Below lg the rail is a drawer: it stops taking width from the page, keeps its
+   full 220px, and waits off-canvas until it is opened. `visibility` rides along
+   so a closed drawer is out of the tab order and the accessibility tree — a rail
+   that is merely translated off-screen still hands keyboard focus to eight links
+   nobody can see. Its delay lets the slide finish before it hides. */
+@media (max-width: 1023px) {
+  .nx-shell,
+  .nx-shell[data-rail="collapsed"] {
+    --rail-w: 0px;
+  }
+  .nx-shell-rail {
+    width: 220px;
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 0.25s var(--rail-ease), visibility 0s linear 0.25s;
+  }
+  .nx-shell[data-drawer="open"] .nx-shell-rail {
+    transform: none;
+    visibility: visible;
+    transition: transform 0.25s var(--rail-ease), visibility 0s;
+  }
+}
+
+/* Page enter, opacity 0→1 and y 8→0. As a CSS animation it plays from the
+   static HTML, so the first load gets it too, and it can never strand a page at
+   opacity 0: a Motion `initial` is baked into the server HTML as an inline
+   `opacity: 0`, and until the bundle ran the canvas was blank. The route keys
+   this element, so each navigation mounts a fresh one and the animation replays.
+   No fill mode, so nothing is left holding a transform once it has finished. */
+@keyframes nx-page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.nx-page-enter {
+  animation: nx-page-enter 0.3s ease-out;
+}

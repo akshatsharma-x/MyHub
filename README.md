@@ -13,6 +13,8 @@ public data read against one real calendar, with three dated anchors (class X
 rather than from any CSV. Everything else on screen is computed from the rows.
 Nothing in this app pretends to know more than it does.
 
+![The Archive: the owner's masthead and the decade spine, dark theme](docs/screenshots/archive.png)
+
 ```
 npm install
 npm run dev      # http://localhost:3000
@@ -75,6 +77,17 @@ travel the graph receipt by receipt without leaving the page they came from.
 
 `docs/PAGES.md` is the route spec, including which of the judged requirements each
 route carries and how the responsive and typographic claims were measured.
+
+| | |
+|---|---|
+| ![/story: beat one of ten, the sentence and its evidence](docs/screenshots/story.png) | ![/constellation: 131 recurring names on a deterministic dial](docs/screenshots/constellation.png) |
+| ![/rhythms in the light theme: the archive has no noon](docs/screenshots/rhythms-light.png) | ![A receipt opened from /roll, with its lines, tags and join keys](docs/screenshots/receipt.png) |
+
+<p align="center"><img src="docs/screenshots/phone.png" alt="The archive at 390px wide" width="260"></p>
+
+The screenshots are generated from the production build by
+`node tools/audit/screenshots.mjs`, so they can be redrawn whenever the design
+changes.
 
 ## Not a timeline
 

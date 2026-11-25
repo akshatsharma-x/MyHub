@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- The rail's wordmark (.k-mark): ink on an amber block, 2px edge. The M is
+       a polygon rather than text because a favicon cannot load the display
+       face, and a system-font fallback would set a different letter per OS. -->
+  <rect x="1" y="1" width="30" height="30" fill="#eab54c" stroke="#141410" stroke-width="2"/>
+  <path fill="#141410" d="M8 23V9h3.5l4.5 6.5L20.5 9H24v14h-3.5v-8.5L16 20.5l-4.5-6V23z"/>
+</svg>

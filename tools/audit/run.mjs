@@ -48,10 +48,15 @@ const cleanup = async () => {
   server?.close();
   await chrome?.close();
 };
-process.on('SIGINT', async () => {
-  await cleanup();
-  process.exit(130);
-});
+// Ctrl+C is not the only way a run ends early. A run killed with a plain
+// SIGTERM once left its `next start` serving on a stray port for hours, because
+// only SIGINT was handled.
+for (const [signal, code] of [['SIGINT', 130], ['SIGTERM', 143], ['SIGHUP', 129]]) {
+  process.on(signal, async () => {
+    await cleanup();
+    process.exit(code);
+  });
+}
 
 let failed = 0;
 let skipped = 0;

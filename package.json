@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "verify": "next build && node tools/audit/run.mjs",
+    "verify": "next build && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON tools/audit/run.mjs",
     "etl": "node tools/etl.mjs"
   },
   "dependencies": {

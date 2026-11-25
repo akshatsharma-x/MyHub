@@ -17,6 +17,9 @@ export const browser = false;
 export async function run({ root }) {
   // Importing a .ts file needs Node's type stripping: on by default from 22.18
   // and 23.6. The app itself only needs 20.9, so an older Node skips this.
+  // Node also warns that the file's module type is unspecified (package.json
+  // has no "type", and setting one for a test would change how every config
+  // file loads); `npm run verify` silences exactly that warning code.
   if (!process.features.typescript) return { skipped: `Node ${process.version} cannot import TypeScript; needs 22.18+ or 23.6+` };
   const f = await import(pathToFileURL(join(root, 'src', 'lib', 'format.ts')).href);
   const findings = [];

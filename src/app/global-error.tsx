@@ -52,9 +52,10 @@ export default function GlobalError({
                 Try again
               </button>
               {/* A full reload, not a <Link>: a client navigation would re-render
-                  the same root layout that just failed. */}
-              {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-              <a href="/" className="k-btn k-btn-outline">
+                  the same root layout that just failed. A raw href gets no base
+                  path from the router, so it is added here — on GitHub Pages "/"
+                  is the account's root, not this site's. */}
+              <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/`} className="k-btn k-btn-outline">
                 Reload the archive
               </a>
             </div>

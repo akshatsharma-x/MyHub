@@ -31,6 +31,24 @@ variables, no services to start, nothing to sign in to. `npm run verify` needs a
 local Chrome or Chromium, and is described in
 [`tools/audit/README.md`](tools/audit/README.md).
 
+### Deploying
+
+The site is live at **https://akshatsharma-x.github.io/MyHub/**. Every push to
+`main` rebuilds and republishes it through
+[`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml):
+lint, a static export, and GitHub Pages.
+
+It is plain HTML, CSS and JS with no server at all, so any static host can serve
+it. GitHub Pages publishes a project under `/<repo>/`, so the workflow sets
+`PAGES_BASE_PATH` to that prefix, and `next.config.ts` switches to
+`output: 'export'` only when that variable is set. Every other build is
+unchanged. To produce the same files locally:
+
+```
+PAGES_BASE_PATH=/MyHub npm run build    # writes the site to out/
+PAGES_BASE_PATH= npm run build          # the same, for a host's domain root
+```
+
 ### Regenerating the archive
 
 `src/data/archive.json` is committed, so none of this is needed to run the app.

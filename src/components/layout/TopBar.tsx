@@ -6,6 +6,7 @@ import { Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ARCHIVE } from '@/lib/archive';
 import { num } from '@/lib/format';
+import { PAGE_TITLES } from '@/lib/routes';
 import { MobileMenuButton } from './Sidebar';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -17,16 +18,6 @@ const noSubscription = () => () => {};
 const clientHotkey = () => (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘K' : 'Ctrl K');
 const serverHotkey = () => '⌘K';
 
-const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
-  '/': { title: 'The Archive', subtitle: 'Ten years, three datasets' },
-  '/roll': { title: 'The Roll', subtitle: 'Every receipt, searchable' },
-  '/threads': { title: 'Threads', subtitle: 'Receipts that belong together' },
-  '/constellation': { title: 'Constellation', subtitle: 'The archive as a network' },
-  '/chapters': { title: 'Chapters', subtitle: 'Who you were, era by era' },
-  '/rhythms': { title: 'Rhythms', subtitle: 'The patterns underneath' },
-  '/story': { title: 'Story', subtitle: 'What it all adds up to' },
-  '/sources': { title: 'Sources', subtitle: 'What the data does and does not know' },
-};
 
 export function TopBar() {
   const pathname = usePathname();

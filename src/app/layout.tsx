@@ -26,7 +26,12 @@ const playRows = SOURCES.filter((s) => s.feeds.includes("music")).reduce((n, s) 
 const moneyRows = SOURCES.filter((s) => !s.feeds.includes("music")).reduce((n, s) => n + s.rows, 0);
 
 export const metadata: Metadata = {
-  title: "MyHUB — Your Life, In Receipts",
+  // The archive itself keeps the full title; every other route names itself in
+  // its own metadata (see src/lib/routes.ts) and the template adds the product.
+  title: {
+    default: "MyHUB — Your Life, In Receipts",
+    template: "%s — MyHUB",
+  },
   description:
     `Ten years of one person's digital exhaust — ${num(playRows)} plays, ` +
     `${num(moneyRows)} transactions — read as receipts, threads and chapters.`,

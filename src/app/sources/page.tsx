@@ -3,9 +3,14 @@ import { ArrowRight } from 'lucide-react';
 import { META, RECEIPTS, SOURCES } from '@/lib/archive';
 import { num, pct } from '@/lib/format';
 import { kindDef } from '@/lib/kinds';
+import { routeMetadata } from '@/lib/routes';
 import type { ReceiptKind } from '@/lib/types';
 import { KindIcon } from '@/components/receipt/KindIcon';
 import { Slug } from '@/components/ui/Slug';
+
+// The one route that renders on the server, so it names itself directly; the
+// client-rendered routes do it through a layout.
+export const metadata = routeMetadata('/sources');
 
 /**
  * Sources — should I believe any of this?

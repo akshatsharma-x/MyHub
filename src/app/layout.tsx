@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Azeret_Mono } from "next/font/google";
 import "./globals.css";
+import { bodyFont, displayFont, monoFont } from "./fonts";
 import { Shell } from "@/components/layout/Shell";
 import { SOURCES } from "@/lib/archive";
 import { num } from "@/lib/format";
@@ -9,13 +9,6 @@ import { ThemeProvider } from "@/lib/ThemeContext";
 import { ExplorationProvider } from "@/lib/ExplorationContext";
 import { OverlayProvider } from "@/lib/OverlayContext";
 import { ReceiptOverlay } from "@/components/receipt/ReceiptOverlay";
-
-const bodyFont = Geist({ variable: "--font-body", subsets: ["latin"] });
-const monoFont = Geist_Mono({ variable: "--font-body-mono", subsets: ["latin"] });
-// Display face for slugs, headlines, labels and figures. A heavy geometric mono
-// is what makes a headline read as printed matter rather than a marketing hero;
-// body copy stays sans, which is more readable at paragraph length.
-const displayFont = Azeret_Mono({ variable: "--font-display-mono", subsets: ["latin"] });
 
 // The description states two figures, and they were typed in by hand: it claimed
 // 11,878 transactions while /story, computing from the same ETL output, printed

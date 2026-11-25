@@ -20,10 +20,29 @@ npm run dev      # http://localhost:3000
 
 ```
 npm run build && npm start    # every page prerendered as static content
+npm run lint                  # ESLint, Next's core-web-vitals + TypeScript rules
+npm run verify                # build, then the browser verification suite
 ```
 
-Node 20.9+ (developed on 22). No environment variables, no services to start,
-nothing to sign in to.
+Node 20.9+ (developed on 22; the suite's unit check needs 22.18+). No environment
+variables, no services to start, nothing to sign in to. `npm run verify` needs a
+local Chrome or Chromium, and is described in
+[`tools/audit/README.md`](tools/audit/README.md).
+
+### Regenerating the archive
+
+`src/data/archive.json` is committed, so none of this is needed to run the app.
+To rebuild it from source, put the three CSVs in `_raw/` under exactly these
+names and run `npm run etl`:
+
+```
+_raw/spotify_history.csv
+_raw/Daily Household Transactions.csv
+_raw/Augmented_IndiaTransactMultiFacet2024.csv
+```
+
+The output is deterministic: the suite's `etl` check reruns it twice and requires
+both runs to match the committed file byte for byte.
 
 ---
 
@@ -135,13 +154,17 @@ Nothing that carries a fact is set below 11px, and the strings `undefined`,
 `null` and `NaN` are not allowed to reach the screen; every number on screen goes
 through `src/lib/format.ts`.
 
-Both of those are checked rather than asserted: 64 browser renders (8 pages × 4
-widths × 2 themes) measured for overflow, clipping, the 11px floor and those
-sentinel strings, plus the click-gated surfaces a load-time pass can never see.
-The floor is measured through each element's screen CTM, because
-`getComputedStyle().fontSize` reports an SVG label's *specified* size and not the
-size it renders at. `docs/PAGES.md` records what was measured and how the
-detectors were proven to fire.
+Both of those are checked rather than asserted, by a suite that lives in the
+repository: `npm run verify`. It drives the production build in headless Chrome
+across 8 pages × 4 widths × 2 themes for overflow, clipping, the 11px floor and
+those sentinel strings, then the surfaces a load-time pass can never see, every
+keyboard path, WCAG contrast, layout shift, and the brief's runtime constraints
+(same-origin GETs only, one storage key). Every detector is proved to fire on an
+injected defect before its clean result is believed. The floor is measured
+through each element's screen CTM, because `getComputedStyle().fontSize` reports
+an SVG label's *specified* size and not the size it renders at.
+[`tools/audit/README.md`](tools/audit/README.md) lists each check and each ruler
+that was once wrong.
 
 ## Layout
 
@@ -151,7 +174,7 @@ src/components/   layout (shell, rail, topbar) · receipt · thread · pattern �
 src/lib/          archive.ts (the import) · engine/ (links, threads, entities,
                   patterns, chapters, story) · format.ts · kinds.ts · theme.ts
 src/data/         archive.json — the committed ETL output
-tools/            etl.mjs and the CSV reader it uses
+tools/            etl.mjs and the CSV reader it uses · audit/ (the verification suite)
 docs/             DATA_BRIEF.md (what the data is) · SOURCES.md (what it knows)
                   PAGES.md (the route spec)
 ```

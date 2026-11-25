@@ -26,16 +26,20 @@ failed.
 ## How the layout claims were checked
 
 "Tested at four widths" is the kind of line that is usually written from having
-looked at the page. These were driven through a real browser against the
-production build and measured, because the two questions that matter here are
-both invisible in the source:
+looked at the page. These claims are measured instead, by the suite in
+[`tools/audit/`](../tools/audit/README.md) — `npm run verify` — which drives the
+production build in a real headless Chrome, because the questions that matter
+here are invisible in the source:
 
-- **64 renders** — 8 routes × 4 widths × 2 themes — each checked for horizontal
-  document overflow, text clipped with no ellipsis to admit it, any text node
-  whose *computed* size falls under the 11px floor, and the strings `undefined` /
-  `null` / `NaN` in visible text. Plus the click-gated surfaces the load-time
-  pass can never see: the receipt overlay, a second receipt opened from inside
-  it, the filter rail, the mobile navigation rail, and an opened thread.
+- **64 renders** — 8 routes × 360/768/1280/1920 × 2 themes — each run through
+  every page detector: horizontal document overflow, text clipped with no
+  ellipsis to admit it, any text under the 11px floor, the strings `undefined` /
+  `null` / `NaN`, a gendered pronoun, two punctuation marks colliding, and the
+  two blocks that print the owner. Then **28 opened surfaces** a load-time pass
+  can never see — the receipt overlay, a receipt walked to from inside it, the
+  filter disclosure, the phone drawer, a focused dial node, an expanded thread —
+  and the ten story beats, which mount one at a time, over **40 renders** that
+  must reach ten distinct headings each time or count for nothing.
 - **The 11px floor inside SVG needs its own ruler.** `getComputedStyle().fontSize`
   on an SVG label reports the size it was *specified* at, not the size it renders
   at — a 14-unit label in a 1480-unit viewBox drawn 600px wide renders at 5.7px
@@ -43,26 +47,46 @@ both invisible in the source:
   under the floor in a first draft. The floor is therefore measured through each
   element's screen CTM, and the dial now carries no `<text>` at all: every name on
   it is HTML in an overlay, set in CSS pixels.
-- **The dial's labels were checked by focusing all 131 nodes** at three widths and
-  comparing each revealed name to the panel that has to contain it. Nothing crosses
-  the edge. The binding case is not a node name but a rim kind label — the
-  purchases sector's, with 12px of clearance inside the geometry box and 16px of
-  panel padding beyond that before it would touch ink.
-- **The two blocks that print the owner were measured separately**, because they
-  are the only places where a change to `meta.owner` can reach the layout: the
-  masthead's standing line on `/`, and the anchors list on `/sources`. 32 renders
-  — 8 routes × {360, 1280} × 2 themes — confirm the standing line stays inside
-  its row at 360px where an inline `work · at` pair is most likely to escape, and
-  that the anchors list renders three rows, each with a four-digit year and a
-  non-empty label, inside its box. The same pass scans visible text for a
-  gendered pronoun, since the owner's are unrecorded and the archive must not
-  guess them from a name.
+- **Every label the dial can print** is compared with the panel that has to
+  contain it, at 1280, 1440 and 1920: the 29 printed without a focus (21 node
+  names and the 8 sector labels) and the 110 that only a focus reveals, with each
+  of the 131 nodes clicked in turn. Nothing crosses the edge. The binding case is
+  not a node name but a rim kind label — the purchases sector's, with 12px of
+  clearance inside the geometry box and 16px of panel padding beyond that before
+  it would touch ink. *This line used to say the labels were checked "by focusing
+  all 131 nodes". The harness behind it measured only the names a focus revealed,
+  so the 29 always on screen were never part of that check.*
+- **The two blocks that print the owner** — the masthead's standing line on `/`
+  and the anchors list on `/sources` — are the only places a change to
+  `meta.owner` can reach the layout, and both have their own detectors in every
+  one of the 64 renders: the standing line must stay inside its row, and the
+  anchors list must hold three rows, each a four-digit year with a label, inside
+  its box. The pronoun detector is there because the owner's pronouns are
+  unrecorded and the archive must not guess them from a name.
+- **First paint is the final layout.** With JavaScript disabled, the static HTML
+  already places the rail, the top bar and the canvas correctly at all four
+  widths, and the cumulative layout shift once JavaScript runs is 0. It was 0.37
+  at 1280px and 0.60 at 360px until the shell's geometry moved from Motion
+  targets computed in JS into CSS.
+- **Keyboard and screen reader.** Every tab stop on every route — well over a
+  thousand, walked with real key events until focus wraps (the suite prints the
+  count per route) — must show a focus ring, carry
+  an accessible name and land in view. The skip link, the overlay's focus trap
+  and the drawer's are each driven end to end. Every page has one `h1` and an
+  outline that skips no level.
+- **Contrast and the runtime constraints.** Every visible text run meets WCAG AA
+  in both themes, measured against what is actually painted behind it rather
+  than against its DOM ancestors. Every request in a full visit is a same-origin
+  GET, nothing touches `/api`, and `localStorage` ends holding only `app_theme`.
 
-A detector that has never fired proves nothing, so each check was also run against
-the defect it exists to catch — a 9px figure, a stray `undefined`, an over-wide
-block, a gendered pronoun, a dropped anchor row, an anchor row escaping its list
-box, an emptied standing line — and all seven fired, each reporting clean on the
-untouched page first.
+A detector that has never fired proves nothing, so each one is defined exactly
+once, in `tools/audit/lib/detectors.mjs`, beside the faults that prove it fires —
+a 9px figure, a stray `undefined`, an over-wide block, a gendered pronoun, a
+dropped anchor row, an emptied standing line, the exact `…. ` that once shipped
+on `/rhythms`, a story beat that hands the owner an age: 19 faults across 11
+detectors. The suite runs them before any sweep is believed. An earlier
+generation of these checks proved its detectors with *copies* of them, which
+proves only that the copies fire.
 
 **One of them had to be repaired before it could fire, and the reason generalises.**
 The anchors check first located its list by matching the heading text `Facts from
@@ -93,9 +117,15 @@ it fails the same silent way.
 - Every number on screen goes through `src/lib/format.ts`. Every receipt is
   clickable and opens the shared overlay. Every list has an `<EmptyState>`.
 - Responsive: single column under 768px, and nothing may overflow at 360px.
-  Charts are SVG with `viewBox` + `preserveAspectRatio`, never a fixed pixel
-  width. Filter rails collapse to a horizontal scroller or a disclosure, not a
-  squeezed sidebar.
+  Charts scale with their column and never take a fixed pixel width. The four
+  charts — decade spine, monthly spine, hour dial, week grid — are DOM boxes
+  sized in percentages, which keeps their labels real text at a real size and
+  every bar or cell a focusable button. The constellation dial is the one SVG,
+  with `viewBox` scaling and its names set as HTML over it. *This line used to
+  say "Charts are SVG with `viewBox` + `preserveAspectRatio`". They were built as
+  DOM instead, for the reason `DecadeSpine.tsx` gives: `preserveAspectRatio="none"`
+  stretches the labels, and a fixed aspect collapses to 87px on a phone.* Filter
+  rails collapse to a disclosure, not a squeezed sidebar.
 - `'use client'` wherever there is state, and there is state nearly everywhere.
   Anything reading `useSearchParams` needs a `<Suspense>` boundary around it.
 - No page fetches anything. Everything comes from `@/lib/archive` and
@@ -124,8 +154,9 @@ Not a dashboard. An opening spread.
    masthead was written inline and `<Figure>` ended up with no importers anywhere
    in `src/` — see the note at the end of this file.
 2. **The decade spine.** The signature visual, and the answer to requirement 5.
-   One horizontal SVG band per year, 2015→2024, each year a stack of hard-edged
-   blocks coloured by receipt kind, height proportional to that year's volume.
+   One column per year, 2015→2024, each a stack of hard-edged blocks coloured by
+   receipt kind, height proportional to that year's volume — DOM boxes rather
+   than SVG, so each year is a real focusable button.
    Under it, a thin second band showing what the archive *knows* each year —
    music-only in 2019–21, both ledgers elsewhere — so the gap is visible at a
    glance. Hovering a year shows its counts; clicking it navigates to `/roll`

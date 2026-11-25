@@ -783,7 +783,7 @@ function monthlyCadence(ctx: Ctx): Pattern | null {
   });
 }
 
-function flaggedCharges({ cards, tagged }: Ctx): Pattern | null {
+function flaggedCharges({ cards }: Ctx): Pattern | null {
   const cardMoney = dedupeRows(cards.filter(r => amountOf(r) !== null));
   const flagged = cardMoney.filter(r => r.tags.includes('flagged'));
   if (flagged.length < 5 || cardMoney.length < 50) return null;

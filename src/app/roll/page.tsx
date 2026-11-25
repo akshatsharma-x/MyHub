@@ -89,22 +89,30 @@ function RollBody(): React.JSX.Element {
   const { seen } = useExploration();
 
   const fieldRef = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState<Query>(EMPTY_QUERY);
+  // `?year=` arrives from the decade spine and the chapter spreads, `?kind=` from
+  // the kind links. Read once, as the initial state, rather than kept in sync:
+  // after that first read the filter state belongs to the page — writing every
+  // chip back into the URL would turn the browser's back button into an undo
+  // stack for individual checkboxes.
+  //
+  // An initializer, not an effect that sets state after mount: this component
+  // only ever renders on the client (useSearchParams bails the prerender out to
+  // the Suspense boundary below), so the params are already readable on the
+  // first render and there is no reason to render the unfiltered roll first.
+  const [query, setQuery] = useState<Query>(() => {
+    const year = Number(params.get('year'));
+    const kind = params.get('kind');
+    const initial: Query = { ...EMPTY_QUERY };
+    if (Number.isFinite(year) && year > 1970) initial.years = [year];
+    if (kind && kind in KIND_DEFS) initial.kinds = [kind as ReceiptKind];
+    return initial;
+  });
   const [shown, setShown] = useState(PAGE_SIZE);
   const [railOpen, setRailOpen] = useState(false);
 
-  // `?year=` arrives from the decade spine and the chapter spreads; `?focus=1` is
-  // what ⌘K pushes. Read once on mount rather than kept in sync, because after
-  // that first read the filter state belongs to the page — writing every chip
-  // back into the URL would turn the browser's back button into an undo stack for
-  // individual checkboxes.
+  // `?focus=1` is what ⌘K pushes. Focusing is a DOM side effect, so this one
+  // stays an effect.
   useEffect(() => {
-    const year = Number(params.get('year'));
-    const kind = params.get('kind');
-    const next: Partial<Query> = {};
-    if (Number.isFinite(year) && year > 1970) next.years = [year];
-    if (kind && kind in KIND_DEFS) next.kinds = [kind as ReceiptKind];
-    if (Object.keys(next).length > 0) setQuery((q) => ({ ...q, ...next }));
     if (params.get('focus') === '1') fieldRef.current?.focus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

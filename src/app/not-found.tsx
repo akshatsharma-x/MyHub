@@ -17,6 +17,7 @@ export const metadata: Metadata = { title: 'Not found' };
 export default function NotFound(): React.JSX.Element {
   return (
     <EmptyState
+      level={2}
       slug="Not on file"
       title="NOTHING WAS FILED UNDER THIS ADDRESS"
       detail="The archive has eight pages and they are all in the rail. Every receipt it holds is on the roll."

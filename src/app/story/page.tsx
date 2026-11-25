@@ -611,7 +611,8 @@ export default function StoryPage(): React.JSX.Element {
       {/* ── The masthead ─────────────────────────────────────────────────── */}
       <section className="k-paper k-panel p-5 sm:p-6">
         <Slug>The closing argument</Slug>
-        <h1 className="k-display mt-2">WHAT DOES IT ALL MEAN?</h1>
+        {/* h2, not h1: the topbar already prints the page's one h1. */}
+        <h2 className="k-display mt-2">WHAT DOES IT ALL MEAN?</h2>
         <p className="nx-support mt-3 max-w-[72ch]">
           Ten beats, in order, at your pace. Each one is a sentence and the evidence
           for it &mdash; use the arrow keys, the buttons, or the index to move, and
@@ -666,7 +667,7 @@ export default function StoryPage(): React.JSX.Element {
 
         {/* ── The beat ────────────────────────────────────────────────────── */}
         <div className="min-w-0 flex-1">
-          <section className="k-paper k-panel">
+          <section className="k-paper k-panel" aria-labelledby="story-beat-title">
             {/* The beat body is replaced, not cross-faded: two beats overlapping
                 would put two contradictory sets of figures on screen at once. */}
             <AnimatePresence mode="wait" initial={false}>
@@ -684,7 +685,7 @@ export default function StoryPage(): React.JSX.Element {
                       {String(at + 1).padStart(2, '0')} / {String(beats.length).padStart(2, '0')}
                     </span>
                   </div>
-                  <h2 className="k-display mt-3 break-words">{beat.title}</h2>
+                  <h2 id="story-beat-title" className="k-display mt-3 break-words">{beat.title}</h2>
                   <p
                     className="mt-5 max-w-[62ch] break-words text-[15px] leading-[1.75] sm:text-[17px]"
                     style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}

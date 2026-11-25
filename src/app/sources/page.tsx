@@ -132,7 +132,8 @@ export default function SourcesPage(): React.JSX.Element {
       {/* ── Masthead ─────────────────────────────────────────────────────── */}
       <header>
         <Slug>Sources</Slug>
-        <h1 className="k-display mt-2">SHOULD I BELIEVE ANY OF THIS?</h1>
+        {/* h2, not h1: the topbar already prints the page's one h1. */}
+        <h2 className="k-display mt-2">SHOULD I BELIEVE ANY OF THIS?</h2>
         <p
           className="mt-5 text-[15px] leading-[1.75] sm:text-[17px]"
           style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}

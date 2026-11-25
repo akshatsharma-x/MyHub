@@ -22,6 +22,7 @@ export default function RouteError({
 }): React.JSX.Element {
   return (
     <EmptyState
+      level={2}
       slug="Misprint"
       title="THIS PAGE FAILED TO PRINT"
       detail="Something in this view broke while it was being drawn. The archive itself is a fixed file and is not affected: trying again redraws the page, and every other page is still in the rail."

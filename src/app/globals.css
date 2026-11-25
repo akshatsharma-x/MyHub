@@ -1,0 +1,1047 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   The dark theme IS :root. The light theme is a set of overrides at the foot
+   of this file. That means the light theme can never regress the dark one, and
+   this file holds one theme's worth of overrides instead of two.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  :root {
+    /* Tells the browser which way native UI — form controls, the scrollbar
+       gutter, the caret — should be painted. Flipped by the light theme block
+       at the foot of this file. */
+    color-scheme: dark;
+
+    /* Backgrounds */
+    --bg-base: #08080f;
+    --bg-surface: #0e0e1a;
+    --bg-elevated: #141425;
+    --bg-overlay: #1a1a2e;
+    --bg-input: #111120;
+
+    /* Borders */
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-default: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.18);
+
+    /* Text.
+       The paper ink below carries a contrast table; this ramp did not, and that
+       asymmetry is how the dark theme — the *default* theme — shipped a draft
+       with .k-label at 2.1:1 and --text-tertiary at 2.8:1. The rule stated for
+       --ink-4 ("a label this system explicitly sets at 11px cannot then be the
+       one step that is not readable") is a property of the language, not of
+       paper, so it applies here too and the two quiet steps were re-cut until
+       it held.
+
+       Measured against every surface the room offers, worst column first —
+       --bg-overlay #1a1a2e is the lightest and therefore the binding one:
+
+                      overlay / input / hover / well / rail
+         primary       15.1 / 16.5 / 16.3 / 17.1 / 17.9     unchanged
+         secondary      6.2 /  6.8 /  6.7 /  7.0 /  7.3     unchanged
+         tertiary       5.5 /  6.0 /  5.9 /  6.2 /  6.5     was 2.4–2.8
+         muted          4.7 /  5.1 /  5.1 /  5.3 /  5.6     was 1.8–2.1
+
+       The cost is the one paper already pays: the quiet end compresses. Tertiary
+       and muted now sit 1.17 apart in relative luminance where they were 1.33,
+       and secondary is 1.13 off tertiary — so at this end of the ramp hierarchy
+       is carried by size, weight and tracking, and tone only agrees with it.
+       Neither step may be darkened back toward the old values without putting an
+       unreadable label into the theme that loads by default. */
+    --text-primary: #f0f0ff;
+    --text-secondary: #9999bb;
+    --text-tertiary: #9090ab;
+    --text-muted: #84849f;
+
+    /* Accents. Tuned for luminance against #08080f; each one has a text-safe
+       sibling for paper, defined in .k-paper below. */
+    --accent-violet: #7c3aed;
+    --accent-violet-bright: #8b5cf6;
+    --accent-cyan: #06b6d4;
+    --accent-cyan-bright: #22d3ee;
+    --accent-green: #10b981;
+    --accent-green-bright: #34d399;
+    --accent-amber: #f59e0b;
+    --accent-rose: #f43f5e;
+
+    /* A six-step categorical ramp (progress tiers, severity, category coding).
+       Rename to suit, but keep the values — they are spaced to stay
+       distinguishable at small sizes on both surfaces. */
+    --level-0: #4a4a6a;
+    --level-1: #3b82f6;
+    --level-2: #8b5cf6;
+    --level-3: #06b6d4;
+    --level-4: #10b981;
+    --level-5: #f59e0b;
+
+    /* ── Application frame ────────────────────────────────────────────────
+       The chrome sits *below* --bg-base rather than above it, so the canvas
+       reads as the lit surface and the rail and topbar recede around it.
+       That is the opposite of the usual dashboard, where the sidebar is a
+       lighter panel laid on top of the page. */
+    --frame-rail: #06060c;
+    --frame-edge: rgba(255, 255, 255, 0.05);
+    --frame-topbar: rgba(6, 6, 12, 0.72);
+    /* A well is a recess in the rail, not a card on it — hence a white wash
+       at very low alpha instead of one of the --bg-* surfaces. */
+    --frame-well: rgba(255, 255, 255, 0.022);
+    /* Hover on a rail item is a *lift*, not a recess, so it is its own token
+       rather than a second use of --frame-well. It must be a token and not a
+       hardcoded white alpha, which vanishes the moment the room turns cream. */
+    --frame-hover: rgba(255, 255, 255, 0.055);
+    /* The *resting* end of that hover, which has to be a zero-alpha wash of
+       the same hue rather than the keyword `transparent`. Framer Motion cannot
+       interpolate `transparent` — it is a keyword, not a colour with channels —
+       so an item animating from it logs a warning per hover and snaps instead
+       of fading. rgba(…, 0) is the same pixels and does interpolate. */
+    --frame-hover-off: rgba(255, 255, 255, 0);
+
+    /* ── Paper layer ──────────────────────────────────────────────────────
+       The editorial half of the language: content sits on cream stock laid
+       on the dark room. Cream against near-black is already the highest
+       contrast edge on the page, so a paper panel needs no border to be
+       legible as an object — the border and the offset block are structure,
+       not separation. */
+    --paper: #f2efe9;
+    --paper-raised: #fbfaf7;
+    --paper-well: #e7e3d9;
+    --paper-edge: #d8d3c6;
+
+    /* Ink. Measured against every stock an ink step can land on, and there are
+       four, not three. The original table named canvas #f2efe9, sheet #fbfaf7
+       and rail #e7e3d9 — but --frame-well is a 5% ink wash laid *over* the rail,
+       which composites to #dcd9cf and is darker than any named stock. That
+       fourth surface is where .k-label actually sits in the rail, and it is the
+       one the first table missed: --ink-4 measured 4.1:1 there, against the 4.5
+       the table reported for the rail it is not on.
+
+       So the ramp is re-cut to clear AA on all four (canvas / sheet / rail /
+       well), verified from rendered pixels rather than from the cascade:
+
+         --ink    16.1 / 17.7 / 14.4 / 13.1     --ink-3   6.5 / 7.1 / 5.8 / 5.2
+         --ink-2  10.9 / 12.0 /  9.8 /  8.9     --ink-4   5.7 / 6.3 / 5.1 / 4.6
+
+       --ink-4 must not be lightened. It is --text-muted on paper, and
+       --text-muted is what .k-label paints with — a label this system
+       explicitly sets at 11px "because a label still has to be read" cannot
+       then be the one step that is not readable. The cost of keeping it dark
+       is a compressed gap to --ink-3: hierarchy at the quiet end is carried
+       more by size and tracking than by tone. Readable and close beats
+       distinct and not.
+
+       --ink-3 moved with it, and only to keep that gap from closing entirely.
+       Darkening --ink-4 far enough to clear the well brought it level with the
+       old --ink-3, which would have left two ramp steps at one tone and read as
+       a mistake rather than a decision. The two now sit 1.13 apart in relative
+       luminance — the same compression the paragraph above accepts, held rather
+       than deepened. If you add a surface darker than the well, re-measure this
+       table before trusting it. */
+    --ink: #141410;
+    --ink-2: #34342d;
+    --ink-3: #56564c;
+    --ink-4: #5e5e53;
+
+    /* The single accent. --amber is a *block* colour: at 1.8:1 on cream it
+       must never carry text there, only fill behind ink. --amber-ink is its
+       text-safe counterpart on paper (5.9:1 on the canvas); plain --amber is
+       text-safe on the dark room (11:1), which is why the slug is amber on dark
+       and ink on paper.
+
+       --amber-ink was darkened from #8a5a00 for the reason given in the ink
+       table: .k-figure paints with it, and in the rail it lands on the well,
+       where #8a5a00 measured 4.2:1. It now clears AA on all four stocks —
+       5.9 / 6.5 / 5.3 / 4.8 — and the 5.9 above is again true as written. */
+    --amber: #eab54c;
+    --amber-deep: #d69e2e;
+    --amber-ink: #7d5200;
+
+    /* Brutalist depth, context-adaptive. A hard ink offset is invisible on a
+       near-black room, so the dark default is a faint cream ghost and .k-paper
+       swaps in true ink. Every .k-* primitive reads these, which is what lets
+       one primitive sit correctly both on the room and on the stock. */
+    --k-edge: rgba(242, 239, 233, 0.22);
+    --k-edge-strong: rgba(242, 239, 233, 0.4);
+    --k-shadow-sm: 2px 2px 0 0 rgba(242, 239, 233, 0.12);
+    --k-shadow: 4px 4px 0 0 rgba(242, 239, 233, 0.14);
+    --k-shadow-lg: 6px 6px 0 0 rgba(242, 239, 233, 0.16);
+    --k-shadow-amber: 6px 6px 0 0 var(--amber);
+    /* The slug ("// DASHBOARD") and display face invert per context. */
+    --k-slug: var(--amber);
+    --k-display-ink: var(--text-primary);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   @theme inline is the load-bearing half of the theming mechanism. `inline`
+   makes Tailwind SUBSTITUTE these variables into its utilities rather than
+   emitting a frozen copy of the resolved colour. That is what lets a scope
+   further down the tree re-declare --text-primary and re-ink every `text-…`
+   utility inside it, with no per-component theme branching anywhere.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@theme inline {
+  --color-bg-base: var(--bg-base);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-overlay: var(--bg-overlay);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-muted: var(--text-muted);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
+  --color-accent-violet: var(--accent-violet);
+  --color-accent-violet-bright: var(--accent-violet-bright);
+  --color-accent-cyan: var(--accent-cyan);
+  --color-accent-cyan-bright: var(--accent-cyan-bright);
+  --color-accent-green: var(--accent-green);
+  --color-accent-green-bright: var(--accent-green-bright);
+  --color-accent-amber: var(--accent-amber);
+  --color-accent-rose: var(--accent-rose);
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-well: var(--paper-well);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+  --color-amber: var(--amber);
+  --color-amber-ink: var(--amber-ink);
+
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-body-mono);
+  /* The display face is a heavy geometric mono — it is what makes a headline
+     read as a printed slug rather than a marketing hero. */
+  --font-display: var(--font-display-mono), var(--font-body-mono), ui-monospace, monospace;
+
+  /* ── Square by default ─────────────────────────────────────────────────
+     Zeroing the radius scale is the single highest-leverage move: every
+     existing `rounded-lg`/`rounded-xl` in the codebase goes hard-cornered
+     without touching those files. `rounded-full` is not a scale token in
+     Tailwind v4, so status dots, rings and avatars stay circular — which is
+     wanted; only the panels square off. */
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
+
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Focus styles — keyboard accessible */
+:focus-visible {
+  outline: 2px solid var(--accent-violet-bright);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent-violet-bright);
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+::selection {
+  background: rgba(124, 58, 237, 0.35);
+  color: var(--text-primary);
+}
+
+/* ── Canvas atmosphere ───────────────────────────────────────────────────────
+   Environmental lighting for the shell: three wide, very low-alpha radials and
+   a vignette. Every alpha is under 0.08 on purpose — the canvas should read as
+   near-black at a glance, and the depth should only become visible where major
+   content sits in front of it. No grid, no pattern, no panel edges.
+
+   `fixed` because the light belongs to the room, not to the document: if it
+   scrolled with the content it would read as a gradient painted on the page.
+   Content is lifted to z-index 1 by the shell so the vignette tints the room
+   and never the text. */
+.nx-atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1100px 640px at 16% -12%, rgba(124, 58, 237, 0.075), transparent 62%),
+    radial-gradient(880px 600px at 92% 2%, rgba(6, 182, 212, 0.05), transparent 60%),
+    radial-gradient(1000px 820px at 46% 116%, rgba(124, 58, 237, 0.04), transparent 64%),
+    radial-gradient(150% 110% at 50% 0%, transparent 48%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+/* Supporting prose and figures. */
+.nx-support {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+/* Figures are compared down a column far more often than they are read as
+   prose, so they get fixed-width digits. */
+.nx-numeric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
+}
+
+/* Loading placeholder. */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-elevated) 50%, var(--bg-surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fade-up 0.5s ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .shimmer {
+    animation: none;
+    background: var(--bg-elevated);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAPER / BRUTALIST EDITORIAL LAYER  (.k-*)
+
+   Two surfaces, one system. The room is near-black and keeps the atmosphere,
+   the rail and the topbar. Content lives on cream stock laid on that room.
+
+   The mechanism that makes this cheap: `.k-paper` does not introduce a new set
+   of colour names — it *redefines the existing ones*. Because every component
+   already paints with var(--text-primary), var(--bg-surface),
+   var(--border-subtle) and friends, and because @theme inline substitutes those
+   same variables into the Tailwind utilities rather than emitting a frozen
+   copy, re-declaring them on an ancestor re-colours the whole subtree —
+   including third-party-shaped children you never touch.
+
+   Consequence worth knowing: nesting .k-paper inside .k-paper is a no-op, and
+   anything that must stay dark (the rail, the topbar, a modal scrim) simply
+   must not be a descendant of it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* The primitives live in @layer components so that Tailwind's utilities — which
+   sit in the later @layer utilities — still win against them. Unlayered rules
+   outrank every layered rule regardless of specificity, so leaving these at the
+   top level would silently swallow a `px-6` or a `w-10` on a .k-btn or .k-tile.
+   The neutraliser block further down is deliberately NOT layered. */
+@layer components {
+
+.k-paper {
+  /* Surfaces */
+  --bg-base: var(--paper);
+  --bg-surface: var(--paper-raised);
+  --bg-elevated: var(--paper-well);
+  --bg-overlay: var(--paper-edge);
+  --bg-input: var(--paper-raised);
+
+  /* Rules. Structural borders on stock are ink at low alpha; --border-strong
+     becomes full ink so the existing `border-strong` call sites land on the
+     2px-black look rather than a grey. */
+  --border-subtle: rgba(20, 20, 16, 0.14);
+  --border-default: rgba(20, 20, 16, 0.26);
+  --border-strong: var(--ink);
+
+  /* Type */
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-2);
+  --text-tertiary: var(--ink-3);
+  --text-muted: var(--ink-4);
+
+  /* Accents, re-cut for cream. The dark-room accents are tuned for luminance
+     against #08080f and drop to 2–3:1 on paper, so each one moves to its
+     text-safe sibling. Hues are preserved: whatever meaning is attached to
+     violet, green and rose elsewhere survives the surface change.
+
+     "Text-safe on paper" here means the canvas and the sheet, which is what
+     these were cut against. Measured on all four stocks (canvas / sheet / rail /
+     well), the base cyan and green clear AA on the first two only — cyan
+     4.7 / 5.1 / 4.2 / 3.8, green 4.8 / 5.3 / 4.3 / 3.9 — and rose is marginal on
+     the well at 4.4. Their --…-bright siblings clear every stock (cyan 6.3 /
+     7.0 / 5.7 / 5.1; green 6.7 / 7.4 / 6.0 / 5.4), so inside the rail or any
+     wash well, use the bright step for text and keep the base one for fills.
+     Nothing currently sets text in the base steps on those surfaces; this is
+     here so that stays true on purpose rather than by luck. */
+  --accent-violet: #5b21b6;
+  --accent-violet-bright: #6d28d9;
+  --accent-cyan: #0e7490;
+  --accent-cyan-bright: #155e75;
+  --accent-green: #047857;
+  --accent-green-bright: #065f46;
+  --accent-amber: var(--amber-ink);
+  --accent-rose: #be123c;
+
+  /* Ramp, darkened to stay distinguishable on stock. */
+  --level-0: #77776b;
+  --level-1: #1d4ed8;
+  --level-2: #6d28d9;
+  --level-3: #0e7490;
+  --level-4: #047857;
+  --level-5: var(--amber-ink);
+
+  /* Brutalist depth becomes true ink once there is stock to cast it on. */
+  --k-edge: var(--ink);
+  --k-edge-strong: var(--ink);
+  --k-shadow-sm: 2px 2px 0 0 var(--ink);
+  --k-shadow: 4px 4px 0 0 var(--ink);
+  --k-shadow-lg: 6px 6px 0 0 var(--ink);
+  --k-slug: var(--ink);
+  --k-display-ink: var(--ink);
+
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* The inverse of .k-paper: an island of dark room, wherever it is placed.
+   Some objects are not surface-agnostic — a canvas/WebGL scene that draws light
+   lines on transparency is a photograph of a dark room, not a diagram that can
+   be re-inked — so it has to keep its own night behind it when the rest of the
+   app turns cream. Rather than have those call sites branch on the theme, they
+   opt out of it.
+
+   This restates the dark values instead of inheriting them, because it has to
+   win from two directions: inside .k-paper, and inside the light theme. Adding
+   a token to :root means adding it here too. */
+.k-room {
+  --bg-base: #08080f;
+  --bg-surface: #0e0e1a;
+  --bg-elevated: #141425;
+  --bg-overlay: #1a1a2e;
+  --bg-input: #111120;
+
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
+  /* These four are contrast-pinned — see the table on the :root ramp. They are
+     duplicated rather than inherited because .k-room has to win inside .k-paper,
+     so a value changed there and not here reverts on every room-in-paper scope. */
+  --text-primary: #f0f0ff;
+  --text-secondary: #9999bb;
+  --text-tertiary: #9090ab;
+  --text-muted: #84849f;
+
+  --accent-violet: #7c3aed;
+  --accent-violet-bright: #8b5cf6;
+  --accent-cyan: #06b6d4;
+  --accent-cyan-bright: #22d3ee;
+  --accent-green: #10b981;
+  --accent-green-bright: #34d399;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+
+  --level-0: #4a4a6a;
+  --level-1: #3b82f6;
+  --level-2: #8b5cf6;
+  --level-3: #06b6d4;
+  --level-4: #10b981;
+  --level-5: #f59e0b;
+
+  --k-edge: rgba(242, 239, 233, 0.22);
+  --k-edge-strong: rgba(242, 239, 233, 0.4);
+  --k-shadow-sm: 2px 2px 0 0 rgba(242, 239, 233, 0.12);
+  --k-shadow: 4px 4px 0 0 rgba(242, 239, 233, 0.14);
+  --k-shadow-lg: 6px 6px 0 0 rgba(242, 239, 233, 0.16);
+  --k-slug: var(--amber);
+  --k-display-ink: var(--text-primary);
+
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Neutralisers. Dark-room idioms that either disappear or turn muddy on stock.
+
+   Each selector matches TWO scopes, because "on paper" has two meanings: a
+   cream sheet inside the dark theme (.k-paper), and the light theme, where the
+   room itself is cream and every descendant of <html> is on paper. They share
+   one selector list rather than living in two blocks so the two surfaces cannot
+   drift apart as this list grows. :is() takes the specificity of its most
+   specific argument, so these outrank the single-class rules above — and they
+   are UNLAYERED so they outrank anything in @layer.
+
+   If you add any effect of this kind, add it here too.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:is(.k-paper, html[data-theme="light"]) .shimmer {
+  background: linear-gradient(90deg, var(--paper-well) 25%, var(--paper-edge) 50%, var(--paper-well) 75%);
+  background-size: 200% 100%;
+}
+/* Focus ring needs to be visible against stock, not against the room. */
+:is(.k-paper, html[data-theme="light"]) :focus-visible {
+  outline-color: var(--ink);
+}
+
+@layer components {
+
+/* ── Panels ──────────────────────────────────────────────────────────────── */
+
+/* A sheet of stock. Square, ink-ruled, offset. */
+.k-panel {
+  border: 2px solid var(--k-edge);
+  box-shadow: var(--k-shadow);
+}
+/* Reserved for the one primary object on a view. The amber offset is the only
+   place the accent is allowed to carry that much area. */
+.k-panel-hero {
+  border: 2px solid var(--k-edge);
+  box-shadow: var(--k-shadow-amber);
+}
+.k-panel-flat {
+  border: 2px solid var(--k-edge);
+}
+/* A recess in the stock rather than a sheet on it — for nested, secondary
+   content where another bordered box would read as clutter. */
+.k-well {
+  background: var(--paper-well);
+  border: 1px solid rgba(20, 20, 16, 0.14);
+}
+
+/* ── Typography ──────────────────────────────────────────────────────────── */
+
+/* "// DASHBOARD" — the printed slug. Amber on the room, ink on stock.
+   NEVER type the "// " in markup; it comes from ::before. */
+.k-slug {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--k-slug);
+  line-height: 1.2;
+}
+.k-slug::before {
+  content: "// ";
+}
+
+.k-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  text-transform: uppercase;
+  color: var(--k-display-ink);
+  font-size: clamp(2rem, 1.2rem + 3.4vw, 3.75rem);
+}
+.k-display-sm {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  color: var(--k-display-ink);
+  font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+}
+/* Uppercase mono label. 11px, not 9 or 10 — a label still has to be read. */
+.k-label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+/* Figures, set in the display face with fixed-width digits. */
+.k-figure {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+/* The amber band behind a phrase. A solid two-stop fill, so it is a printed
+   highlight and not a gradient. */
+.k-highlight {
+  background-image: linear-gradient(var(--amber), var(--amber));
+  background-repeat: no-repeat;
+  background-size: 100% 0.26em;
+  background-position: 0 92%;
+}
+
+/* ── Rules ───────────────────────────────────────────────────────────────── */
+
+.k-rule-hard {
+  height: 0;
+  border: 0;
+  border-top: 2px solid var(--k-edge);
+}
+.k-rule-thin {
+  height: 0;
+  border: 0;
+  border-top: 1px solid var(--k-edge);
+  opacity: 0.55;
+}
+
+/* ── Controls ────────────────────────────────────────────────────────────── */
+
+.k-btn {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1.25rem;
+  border: 2px solid var(--k-edge);
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+/* Press translates the object onto its own offset block instead of scaling —
+   the depth is drawn, so it should behave like a physical key. */
+.k-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none !important;
+}
+.k-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+/* The solid variant inverts by surface: an ink fill would sink into the dark
+   room, so on the room it is stock-on-room and on stock it is ink-on-stock.
+   Expressed as a room default plus an override rather than with a :not() — a
+   descendant combinator inside :not() is Selectors-4 and not worth the
+   compatibility risk for a primary button. The override covers both paper
+   surfaces: a cream sheet, and the light theme, where the room is itself
+   cream and a stock-on-room fill would leave the primary button invisible. */
+.k-btn-solid {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--k-shadow);
+}
+:is(.k-paper, html[data-theme="light"]) .k-btn-solid {
+  background: var(--ink);
+  color: var(--paper);
+}
+:is(.k-paper, html[data-theme="light"]) .k-btn-solid:hover:not(:disabled) {
+  background: #000;
+}
+.k-btn-outline {
+  background: transparent;
+  color: var(--text-primary);
+  box-shadow: var(--k-shadow);
+}
+.k-btn-amber {
+  background: var(--amber);
+  color: var(--ink);
+  border-color: var(--k-edge);
+  box-shadow: var(--k-shadow);
+}
+.k-btn-amber:hover:not(:disabled) {
+  background: var(--amber-deep);
+}
+
+/* An input on stock: square, ink-ruled, and inset rather than lifted. */
+.k-field {
+  background: var(--paper-raised);
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  box-shadow: inset 2px 2px 0 0 rgba(20, 20, 16, 0.07);
+}
+.k-field::placeholder {
+  color: var(--ink-4);
+}
+.k-field:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  box-shadow: var(--k-shadow-sm);
+}
+
+/* ── Blocks ──────────────────────────────────────────────────────────────── */
+
+/* The amber icon tile. */
+.k-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: none;
+  background: var(--amber);
+  color: var(--ink);
+  border: 2px solid var(--k-edge);
+  box-shadow: var(--k-shadow-sm);
+}
+/* "ACTIVE" — a square amber chip, ink type. Never a pill. */
+.k-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  background: var(--amber);
+  color: var(--ink);
+  border: 1px solid var(--k-edge);
+}
+.k-badge-quiet {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--k-edge);
+}
+/* The wordmark block. */
+.k-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: none;
+  background: var(--amber);
+  color: var(--ink);
+  border: 2px solid var(--k-edge);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 13px;
+}
+
+/* Square meter. No rounded cap, no gradient. */
+.k-meter {
+  height: 0.6rem;
+  background: transparent;
+  border: 2px solid var(--k-edge);
+  overflow: hidden;
+}
+.k-meter-fill {
+  height: 100%;
+  background: var(--amber);
+  transition: width 400ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .k-btn,
+  .k-meter-fill {
+    transition: none;
+  }
+  .k-btn:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+}
+
+/* An amber fill against cream is 1.8:1 — a meter drawn that way on stock does
+   not report its own value, which is the one thing a meter has to do. On paper
+   the fill becomes ink against a stock track (12:1) and amber goes back to
+   being a badge colour. This is not a light-theme rule: it applies to a cream
+   sheet in the dark theme too, wherever a meter sits inside a .k-paper panel. */
+:is(.k-paper, html[data-theme="light"]) .k-meter {
+  background: var(--paper-edge);
+}
+:is(.k-paper, html[data-theme="light"]) .k-meter-fill {
+  background: var(--ink);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIGHT THEME  (html[data-theme="light"])
+
+   The dark theme is :root. Nothing below touches it, so the light theme cannot
+   regress it — this file has one theme's worth of overrides, not two.
+
+   The two themes are the same room under different light, not two designs. The
+   depth order is preserved rather than inverted: chrome sits one step *behind*
+   the canvas and content sheets one step in *front* of it, which is the same
+   relationship the dark theme has (rail #06060c behind room #08080f behind
+   cream sheets), compressed into three tones of stock:
+
+       rail #e7e3d9   ·   canvas #f2efe9   ·   sheet #fbfaf7
+
+   Three ten-point steps is deliberately not much separation. On this surface
+   structure is carried by the 2px ink rules and the hard offsets, not by the
+   fills — which is the premise of the whole language, and the reason the light
+   theme needed no second set of components. The test from the dark theme still
+   applies here: remove every shadow and the page should still hold together.
+
+   These rules are UNLAYERED, so they outrank both :root (in @layer base) and
+   the .k-* primitives (in @layer components). Custom properties are resolved
+   per element, so a .k-paper sheet further down the tree still wins for its own
+   subtree — setting a variable here and re-setting it there is not a conflict.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html[data-theme="light"] {
+  color-scheme: light;
+
+  --bg-base: var(--paper);
+  --bg-surface: var(--paper-raised);
+  --bg-elevated: var(--paper-well);
+  --bg-overlay: var(--paper-edge);
+  --bg-input: var(--paper-raised);
+
+  --border-subtle: rgba(20, 20, 16, 0.14);
+  --border-default: rgba(20, 20, 16, 0.26);
+  --border-strong: var(--ink);
+
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-2);
+  --text-tertiary: var(--ink-3);
+  --text-muted: var(--ink-4);
+
+  /* The same re-cut accents .k-paper uses. They are duplicated rather than
+     shared because the two scopes are independent — a sheet in the dark theme
+     must recolour whether or not the light theme exists. */
+  --accent-violet: #5b21b6;
+  --accent-violet-bright: #6d28d9;
+  --accent-cyan: #0e7490;
+  --accent-cyan-bright: #155e75;
+  --accent-green: #047857;
+  --accent-green-bright: #065f46;
+  --accent-amber: var(--amber-ink);
+  --accent-rose: #be123c;
+
+  --level-0: #77776b;
+  --level-1: #1d4ed8;
+  --level-2: #6d28d9;
+  --level-3: #0e7490;
+  --level-4: #047857;
+  --level-5: var(--amber-ink);
+
+  /* Frame. The rail is a step *darker* than the canvas, not lighter, so the
+     chrome still recedes and the page is still the lit surface. */
+  --frame-rail: var(--paper-well);
+  --frame-topbar: var(--paper-well);
+  --frame-edge: rgba(20, 20, 16, 0.14);
+  --frame-well: rgba(20, 20, 16, 0.05);
+  --frame-hover: rgba(20, 20, 16, 0.06);
+  --frame-hover-off: rgba(20, 20, 16, 0);
+
+  /* Depth is true ink now that the whole room is stock. */
+  --k-edge: var(--ink);
+  --k-edge-strong: var(--ink);
+  --k-shadow-sm: 2px 2px 0 0 var(--ink);
+  --k-shadow: 4px 4px 0 0 var(--ink);
+  --k-shadow-lg: 6px 6px 0 0 var(--ink);
+  /* --amber against cream is nearly no edge at all, so the hero offset — the
+     one place the accent carries this much area — steps down to --amber-deep,
+     which is still unmistakably amber but actually casts. */
+  --k-shadow-amber: 6px 6px 0 0 var(--amber-deep);
+  /* The slug is amber on the dark room because amber reads at 11:1 there. On
+     cream it is 1.8:1, so it inverts to ink — the same inversion .k-paper
+     makes, which keeps a slug identical whether it sits on the canvas or on a
+     sheet. The 11px/0.2em setting against a weight-800 display headline is
+     what separates the two, not colour. */
+  --k-slug: var(--ink);
+  --k-display-ink: var(--ink);
+}
+
+/* A sheet in the light theme rises to the top of the stock range, and its
+   nested surfaces descend instead of climbing — there is nothing lighter than
+   --paper-raised to climb to, so a card inside a sheet reads as a cream inset
+   rather than a whiter card. This is the one place the two paper scopes differ,
+   and it is why .k-paper is not simply a no-op here. */
+html[data-theme="light"] .k-paper {
+  background: var(--paper-raised);
+  --bg-base: var(--paper-raised);
+  --bg-surface: var(--paper);
+  --bg-elevated: var(--paper-well);
+  --bg-input: var(--paper);
+}
+
+/* An inset needs to be darker than the sheet it is cut into; on a white sheet
+   --paper-raised would leave nothing but the border. */
+html[data-theme="light"] .k-field {
+  background: var(--paper);
+}
+
+/* The room keeps its lighting, but at a fraction of the strength and with the
+   vignette reading as a faint edge rather than a dark falloff — the same three
+   sources in the same positions, so the geometry of the space is recognisably
+   the same one. */
+html[data-theme="light"] .nx-atmosphere {
+  background:
+    radial-gradient(1100px 640px at 16% -12%, rgba(91, 33, 182, 0.045), transparent 62%),
+    radial-gradient(880px 600px at 92% 2%, rgba(14, 116, 144, 0.035), transparent 60%),
+    radial-gradient(1000px 820px at 46% 116%, rgba(91, 33, 182, 0.025), transparent 64%),
+    radial-gradient(150% 110% at 50% 0%, transparent 56%, rgba(20, 20, 16, 0.055) 100%);
+}
+
+/* Selection is the one remaining place amber can be a block without carrying a
+   contrast burden, since the text on top of it turns ink. */
+html[data-theme="light"] ::selection {
+  background: var(--amber);
+  color: var(--ink);
+}
+
+/* ── Theme-conditional content ────────────────────────────────────────────────
+   The server cannot know the theme, so anything that reads differently per
+   theme renders *both* readings and lets CSS pick. Both rules only ever hide,
+   never un-hide, so a missing data-theme attribute (script blocked, JS off)
+   still resolves to exactly one branch: the dark one, which is what :root
+   paints anyway.
+
+   `display: none` rather than clipping or visibility, because it is what takes
+   the hidden branch out of the accessibility tree — otherwise a screen reader
+   announces both names. */
+html:not([data-theme="light"]) .nx-when-light {
+  display: none;
+}
+html[data-theme="light"] .nx-when-dark {
+  display: none;
+}
+
+/* The toggle's glyph names the axis rather than the position, so a half turn is
+   the only state it reports — enough to confirm the press landed, and it lands
+   on the same silhouette either way. Motion preference is handled by the global
+   reduced-motion block. */
+.nx-theme-icon {
+  transition: transform 250ms ease;
+}
+html[data-theme="light"] .nx-theme-icon {
+  transform: rotate(180deg);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ARCHIVE-SPECIFIC PRIMITIVES
+
+   MyHUB's one domain object is the receipt. Everything below is the printed
+   artefact and nothing else — no new colours, no new effects, and no rounded
+   corners. These earn their place in this file because a receipt appears on
+   five different views and must be the same object on all of them.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Thermal-roll paper. A receipt is a *tall narrow sheet*, so it gets the
+   raised stock and the hard offset, plus the one texture this design permits:
+   a torn edge, drawn as a hard-stop conic mask rather than a blur or an image.
+   It is geometry, not an effect — remove it and the sheet is still a sheet. */
+.k-receipt {
+  background: var(--paper-raised);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  box-shadow: var(--k-shadow);
+  /* The paper layer is unconditional: a receipt is cream on every surface and
+     in both themes, because it is a printed object rather than a panel. */
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-2);
+  --text-tertiary: var(--ink-3);
+  --text-muted: var(--ink-4);
+  --border-subtle: rgba(20, 20, 16, 0.14);
+  --border-default: rgba(20, 20, 16, 0.26);
+  --border-strong: var(--ink);
+  --k-edge: var(--ink);
+  --k-edge-strong: var(--ink);
+  --k-shadow-sm: 2px 2px 0 0 var(--ink);
+  --k-shadow: 4px 4px 0 0 var(--ink);
+  --k-slug: var(--ink);
+  --k-display-ink: var(--ink);
+  --accent-amber: var(--amber-ink);
+}
+
+/* The perforation between a receipt's header and its line items: a dotted rule,
+   which is a rule, not a decoration. */
+.k-perf {
+  height: 0;
+  border: 0;
+  border-top: 2px dotted var(--ink);
+  opacity: 0.45;
+}
+
+/* A line-item row: label left, figure right, leader dots between. The dots are
+   a repeating-linear-gradient because a border-bottom-dotted would sit under
+   the text rather than between the two columns. */
+.k-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.k-line > :first-child { flex: none; }
+.k-line > .k-line-leader {
+  flex: 1 1 auto;
+  height: 1px;
+  align-self: flex-end;
+  margin-bottom: 0.28em;
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(20, 20, 16, 0.4) 0 2px,
+    transparent 2px 5px
+  );
+}
+.k-line > :last-child {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* A stamp: rotated, ruled, ink-on-stock. Used for archive verdicts
+   ("FLAGGED", "RECONSTRUCTED"). The rotation is the only transform in the
+   system that is not a press state, and it is static — a stamp does not move. */
+.k-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  border: 2px solid currentColor;
+  transform: rotate(-3deg);
+}
+
+/* The 24-hour dial and the other figures draw with these so a category keeps
+   one colour across every view. Six kinds share the ramp; the remaining three
+   reuse it with a different mark shape, which is what keeps the palette from
+   growing to nine. */
+.k-ink-well {
+  background: var(--paper-well);
+  border: 1px solid rgba(20, 20, 16, 0.14);
+}

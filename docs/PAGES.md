@@ -79,7 +79,7 @@ here are invisible in the source:
 - **Contrast and the runtime constraints.** Every visible text run meets WCAG AA
   in both themes, measured against what is actually painted behind it rather
   than against its DOM ancestors. Every request in a full visit is a same-origin
-  GET, nothing touches `/api`, and `localStorage` ends holding only `app_theme`.
+  read, nothing touches `/api`, and `localStorage` ends holding only `app_theme`.
 
 A detector that has never fired proves nothing, so each one is defined exactly
 once, in `tools/audit/lib/detectors.mjs`, beside the faults that prove it fires —

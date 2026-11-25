@@ -190,7 +190,7 @@ repository: `npm run verify`. It drives the production build in headless Chrome
 across 8 pages × 4 widths × 2 themes for overflow, clipping, the 11px floor and
 those sentinel strings, then the surfaces a load-time pass can never see, every
 keyboard path, WCAG contrast, layout shift, and the brief's runtime constraints
-(same-origin GETs only, one storage key). Every detector is proved to fire on an
+(same-origin reads only, one storage key). Every detector is proved to fire on an
 injected defect before its clean result is believed. The floor is measured
 through each element's screen CTM, because `getComputedStyle().fontSize` reports
 an SVG label's *specified* size and not the size it renders at.

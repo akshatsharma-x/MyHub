@@ -14,7 +14,9 @@ node tools/audit/run.mjs --list   # what each check measures
 ```
 
 It starts its own `next start` and its own Chrome on free ports and removes both
-afterwards. `--url=http://127.0.0.1:3000` audits a server that is already running,
+afterwards. `--url=http://127.0.0.1:3000` audits a server that is already running
+(including the static export, built with `PAGES_BASE_PATH= npm run build` and
+served from `out/` at a root, since the detectors expect root paths),
 `--cdp=9222` drives a Chrome that is, and `CHROME_PATH` points at Chrome when it
 is somewhere unusual. It exits 1 if any check reports a finding. A full run takes
 a few minutes, most of it the keyboard walk.
@@ -33,7 +35,7 @@ a few minutes, most of it the keyboard walk.
 | `dial` | Every name the constellation can print, shown or focus-revealed, stays inside its panel and off every other name at 1280/1440/1920. |
 | `keyboard` | Every tab stop on every route has a visible ring and a name, and lands in view. The skip link works. The overlay and the drawer trap focus, release it on Escape and return it. |
 | `semantics` | One `h1`, no skipped heading levels, one `<main>`, no duplicate ids, nothing unnamed, `lang`. ⌘K reaches search from anywhere. |
-| `runtime` | Every request is a same-origin GET, nothing touches `/api`, and `localStorage` holds exactly `app_theme`. The theme is right at first paint in six cases, and an unmatched URL answers 404. |
+| `runtime` | Every request is a same-origin read (GET, or the HEAD a static export's router sends before a prefetch), nothing touches `/api`, and `localStorage` holds exactly `app_theme`. The theme is right at first paint in six cases, and an unmatched URL answers 404. |
 | `contrast` | Every visible text run meets WCAG AA in both themes, against what is actually painted behind it. |
 
 ## Rulers, and how each one has been wrong before

@@ -1,7 +1,7 @@
 // The brief's hard constraints, measured in a browser rather than asserted:
 //
 //  · no backend: across a full visit — every route, a search, an opened receipt,
-//    a theme switch — every request is a same-origin GET, nothing touches /api,
+//    a theme switch — every request is a same-origin read, nothing touches /api,
 //    and nothing answers with an error;
 //  · one key: afterwards localStorage holds app_theme and nothing else, and
 //    sessionStorage, cookies and IndexedDB are empty;
@@ -12,7 +12,7 @@
 
 import { ROUTES } from '../lib/routes.mjs';
 
-export const about = 'same-origin GET only, no /api, one storage key, theme at first paint ×6, 404 status';
+export const about = 'same-origin reads only, no /api, one storage key, theme at first paint ×6, 404 status';
 
 export async function run({ open, origin }) {
   const tab = await open();
@@ -43,7 +43,12 @@ export async function run({ open, origin }) {
 
   const origins = [...new Set(requests.map((r) => new URL(r.url).origin))];
   if (origins.some((o) => o !== origin)) findings.push(`requests left the origin: ${origins.filter((o) => o !== origin).join(', ')}`);
-  for (const r of requests.filter((x) => x.method !== 'GET').slice(0, 3)) findings.push(`a ${r.method} request: ${r.url}`);
+  // Reads only: GET, and HEAD. A static export's router sends a HEAD to each
+  // page before prefetching its segment files, to catch a redirect first
+  // (next/dist/client/components/segment-cache/cache.js), so HEAD is the
+  // framework reading a file. Anything that can change state — a form post, a
+  // server action — is what this exists to catch.
+  for (const r of requests.filter((x) => x.method !== 'GET' && x.method !== 'HEAD').slice(0, 3)) findings.push(`a ${r.method} request: ${r.url}`);
   for (const r of requests.filter((x) => /\/api\//.test(x.url)).slice(0, 3)) findings.push(`an /api request: ${r.url}`);
   for (const f of failed.slice(0, 5)) findings.push(`a failed response during a normal visit: ${f}`);
 
@@ -86,5 +91,5 @@ export async function run({ open, origin }) {
 
   for (const l of tab.logs) findings.push(`[console] ${l}`);
   await tab.close();
-  return { findings, summary: `${requests.length} requests, all same-origin GET; one storage key; theme right at first paint in ${CASES.length} cases` };
+  return { findings, summary: `${requests.length} requests, all same-origin reads; one storage key; theme right at first paint in ${CASES.length} cases` };
 }

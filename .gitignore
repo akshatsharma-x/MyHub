@@ -1,0 +1,30 @@
+# dependencies
+node_modules
+
+# next.js build output
+.next
+out
+
+# generated on every `next dev` / `next build`
+next-env.d.ts
+*.tsbuildinfo
+
+# The three source datasets. They are large and third-party, and only
+# tools/etl.mjs reads them. src/data/archive.json is committed instead, so the
+# app builds and runs without them.
+_raw
+*.zip
+
+# This app reads no environment variables. None should ever be committed.
+.env*
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# platform and deploy tooling
+.DS_Store
+*.pem
+.vercel

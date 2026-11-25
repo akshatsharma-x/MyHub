@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MotionConfig } from "framer-motion";
 import "./globals.css";
 import { bodyFont, displayFont, monoFont } from "./fonts";
 import { Shell } from "@/components/layout/Shell";
@@ -58,6 +59,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ThemeProvider>
+          {/* The CSS motion rules already stand down under prefers-reduced-motion;
+              this is the same promise for every Motion component — transforms and
+              layout animations stop, fades stay — including the ones (the
+              tooltip) that never asked useReducedMotion. */}
+          <MotionConfig reducedMotion="user">
           <ExplorationProvider>
             {/* The overlay provider wraps the Shell so a receipt can be opened
                 from the chrome as well as from a page, and the overlay itself is
@@ -69,6 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <ReceiptOverlay />
             </OverlayProvider>
           </ExplorationProvider>
+          </MotionConfig>
         </ThemeProvider>
       </body>
     </html>

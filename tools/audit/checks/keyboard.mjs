@@ -35,10 +35,37 @@ const FOCUSED = function () {
 // starts an animated scroll. Wait until the element's VIEWPORT position stops
 // moving — an earlier version polled its document position, which no scroll
 // ever changes, and declared every scroll finished after three frames.
-const SETTLE = `new Promise((res) => { let last = null, still = 0; const tick = () => {
-  const y = Math.round(document.activeElement?.getBoundingClientRect().top ?? 0) + ':' + Math.round(scrollY);
-  if (y === last) { if (++still > 2) return res(); } else { still = 0; last = y; }
-  requestAnimationFrame(tick); }; tick(); setTimeout(res, 1500); })`;
+//
+// "Stopped moving" alone is not enough either: in the frames between the focus
+// and the start of the scroll animation nothing has moved yet, and one run took
+// that stillness as settled and reported an index entry at 909px of a 900px
+// viewport — which the browser scrolled to 434px half a second later. So a
+// position counts as settled when it is still AND in view, or still for 800ms
+// out of view, which is what a real failure looks like.
+const SETTLE = `new Promise((res) => { const t0 = performance.now(); let last = null, still = 0; const tick = () => {
+  const r = document.activeElement?.getBoundingClientRect();
+  const y = Math.round(r?.top ?? 0) + ':' + Math.round(scrollY);
+  if (y === last) still++; else { still = 0; last = y; }
+  const inView = r && r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth;
+  const waited = performance.now() - t0;
+  if ((still > 2 && (inView || waited > 800)) || waited > 3000) return res();
+  requestAnimationFrame(tick); }; tick(); })`;
+
+/** Judges the stop that currently has focus: the same rulers for the walk and
+ *  for the self-test that proves them. */
+async function judge(tab) {
+  let f = await tab.run(FOCUSED);
+  if (!f) return null;
+  if (!f.seen) {
+    await tab.eval(SETTLE);
+    f = await tab.run(FOCUSED);
+  }
+  const problems = [];
+  if (!f.ring) problems.push('shows no focus ring');
+  if (!f.name) problems.push('has no accessible name');
+  if (!f.seen) problems.push('takes focus out of sight');
+  return { f, problems };
+}
 
 export async function run({ open }) {
   const tab = await open();
@@ -48,6 +75,27 @@ export async function run({ open }) {
   await tab.theme('dark');
   await tab.viewport(1280);
 
+  // The rulers, proved first: a control that can never be scrolled into view,
+  // one with its focus ring stripped, and one with no name must each be
+  // reported by the same judgement the walk uses.
+  await tab.goto('/story');
+  await tab.eval(`(() => { const m = document.querySelector('main');
+    const add = (css, text, fault) => { const b = document.createElement('button'); b.style.cssText = css; b.textContent = text; b.dataset.fault = fault; m.prepend(b); };
+    add('position:fixed;left:-600px;top:10px', 'ghost', 'takes focus out of sight');
+    add('outline:none !important;box-shadow:none !important', 'no ring', 'shows no focus ring');
+    add('width:24px;height:24px', '', 'has no accessible name'); })()`);
+  await tab.eval('document.activeElement?.blur()');
+  const proved = new Set();
+  for (let i = 0; i < 40 && proved.size < 3; i++) {
+    await tab.press('Tab');
+    const fault = await tab.eval('document.activeElement?.dataset.fault || null');
+    const j = await judge(tab);
+    if (fault && j?.problems.includes(fault)) proved.add(fault);
+  }
+  for (const want of ['takes focus out of sight', 'shows no focus ring', 'has no accessible name']) {
+    if (!proved.has(want)) flag('self-test', `the "${want}" ruler did not fire on its injected case`);
+  }
+
   for (const route of ROUTES) {
     await tab.goto(route);
     await tab.eval('document.activeElement?.blur(); window.scrollTo(0, 0)');
@@ -56,18 +104,12 @@ export async function run({ open }) {
     let wrapped = false;
     for (let i = 0; i < 1500; i++) {
       await tab.press('Tab');
-      let f = await tab.run(FOCUSED);
-      if (!f) break;
-      if (f.skip && n > 0) { wrapped = true; break; }
-      if (!f.seen) {
-        await tab.eval(SETTLE);
-        f = await tab.run(FOCUSED);
-      }
+      const j = await judge(tab);
+      if (!j) break;
+      if (j.f.skip && n > 0) { wrapped = true; break; }
       n++;
-      if (f.inMain && firstInMain === null) firstInMain = n;
-      if (!f.ring) flag(route, `stop ${n} <${f.tag}> "${f.name}" shows no focus ring`);
-      if (!f.name) flag(route, `stop ${n} <${f.tag}> has no accessible name`);
-      if (!f.seen) flag(route, `stop ${n} <${f.tag}> "${f.name}" takes focus out of sight`);
+      if (j.f.inMain && firstInMain === null) firstInMain = n;
+      for (const p of j.problems) flag(route, `stop ${n} <${j.f.tag}> "${j.f.name}" ${p}`);
     }
     if (!wrapped && n >= 1500) flag(route, 'the walk hit its 1500-stop ceiling without wrapping');
     stops.push(`${route} ${n}`);

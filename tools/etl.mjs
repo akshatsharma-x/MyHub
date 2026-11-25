@@ -21,7 +21,10 @@ import { readFileSync, writeFileSync, mkdirSync, statSync } from 'node:fs';
 import { parseCsv } from './csv.mjs';
 
 const RAW = '_raw';
-const OUT = 'src/data/archive.json';
+// ETL_OUT exists for tools/audit's determinism check, which runs this twice
+// into temporary files and compares both with the committed archive; nothing
+// else should set it.
+const OUT = process.env.ETL_OUT || 'src/data/archive.json';
 
 const F_SPOTIFY = `${RAW}/spotify_history.csv`;
 const F_HOUSEHOLD = `${RAW}/Daily Household Transactions.csv`;
